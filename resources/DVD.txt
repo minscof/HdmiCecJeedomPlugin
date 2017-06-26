@@ -1,0 +1,2 @@
+sonyDVP-SR370;Sony DVP SR370
+samsungDVD;Samsung DVD

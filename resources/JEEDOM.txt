@@ -1,0 +1,2 @@
+jeedomCenter;Jeedom Center
+jeedomMiniPlus;Jeedom Mini+

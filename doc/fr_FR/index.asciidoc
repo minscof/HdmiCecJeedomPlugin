@@ -1,0 +1,17 @@
+:icons:
+== hdmiCecPlugin
+
+=== Description
+test
+
+'''
+=== Sous-partie 1
+include::partie_1.asciidoc[]
+
+'''
+=== Sous-partie 2
+include::partie_2.asciidoc[]
+
+'''
+=== FAQ
+include::faq.asciidoc[]

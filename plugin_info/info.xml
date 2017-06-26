@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<info>
+    <id>hdmiCec</id>
+    <name>HDMI contrôle (CEC)</name>
+    <description>test</description>
+    <icon>icon animal-sheep1</icon>
+    <licence>AGPL</licence>
+    <author>Minscof</author>
+    <installation>L'installation ajoute les librairies libCEC. Il faut que le système dispose de python en version 2.7 avec le module gevent, gevent-socketio, cec, regex. Un serveur est utilisé pour écouter et transmettre les ordres  via le canal HDMI-CEC. Le port 6000 est recommandé. L'adresse logique CEC Recording Device est recommandée : elle indique comment jeedom se présente sur le réseau CEC HDMI. L'inclusion automatique permet d'ajouter de nouveaux équipements implicitement.  Le fonctionnement standard est de demander une détection alors que tous les équipements sont sous tension. La synchronisation permet de forcer une mise à jour des équipements déjà connus et uniquement eux.</installation>
+    <require>2.0.1</require>
+    <category>multimedia</category>
+    <hasDependency>1</hasDependency>
+    <hasOwnDeamon>1</hasOwnDeamon>
+    <version>0.1.0</version></info>
+

@@ -1,0 +1,3 @@
+raspberryPI1;Raspberry PI 1
+raspberryPI2;Raspberry PI 2
+raspberryPI3;Raspberry PI 3

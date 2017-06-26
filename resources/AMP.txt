@@ -1,0 +1,2 @@
+sonySTR-DN840;Sony STR DN840
+denonAmpli;Denon AVR-1910

@@ -1,0 +1,13 @@
+{
+    "plugins\/hdmiCec\/plugin_info\/info.xml": {
+        "Plugin hdmiCec": "Plugin hdmiCec traduit",
+        "Aucune": "Aucune traduit"
+    },
+    "plugins\/hdmiCec\/desktop\/js\/hdmiCec.js": {
+        "Historiser": "Historiser",
+        "Tester": "Tester"
+    },
+    "plugins\/hdmiCec\/core\/class\/hdmiCec.class.php": {
+        "Etat": "Etat traduit"
+    }
+}
