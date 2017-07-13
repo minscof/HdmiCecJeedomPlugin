@@ -168,9 +168,9 @@ function addCmdToTable(_cmd) {
     tr += '<span class="cmdAttr form-control input-sm" data-l1key="name">';
     tr += '</td>';
     tr += '<td>';
-    tr += '<span><input type="checkbox" data-size="mini" data-label-text="{{Historiser}}" class="cmdAttr bootstrapSwitch" data-l1key="isHistorized" /></span>';
-    tr += '<span><input type="checkbox" data-size="mini" data-label-text="{{Afficher}}" class="cmdAttr bootstrapSwitch" data-l1key="isVisible" /></span>';
-    tr += '<span class="expertModeVisible"><input type="checkbox" data-size="mini" data-label-text="{{Inverser}}" class="cmdAttr bootstrapSwitch" data-l1key="display" data-l2key="invertBinary" /></span>';
+    tr += '<span><label class="checkbox-inline"><input type="checkbox" data-size="mini" data-label-text="{{Historiser}}" class="cmdAttr" data-l1key="isHistorized" /></label></span>';
+    tr += '<span><label class="checkbox-inline"><input type="checkbox" data-size="mini" data-label-text="{{Afficher}}" class="cmdAttr" data-l1key="isVisible" /></label></span>';
+    tr += '<span class="expertModeVisible"><label class="checkbox-inline"><input type="checkbox" data-size="mini" data-label-text="{{Inverser}}" class="cmdAttr" data-l1key="display" data-l2key="invertBinary" /></label></span>';
     //tr += '<input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width : 40%;display : inline-block;"> ';
     //tr += '<input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width : 40%;display : inline-block;">';
     tr += '</td>';
