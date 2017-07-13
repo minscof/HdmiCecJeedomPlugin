@@ -59,7 +59,7 @@ else:
 if len(sys.argv) > 2:
     jeedomSystem = sys.argv[2]
 else:
-    jeedomSystem = "Jeedom"
+    jeedomSystem = "Raspberry"
 
 # jeedomSystem=${3}
 if len(sys.argv) > 3:

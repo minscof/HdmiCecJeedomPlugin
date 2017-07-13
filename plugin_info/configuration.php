@@ -14,45 +14,62 @@
  * You should have received a copy of the GNU General Public License
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
-
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 include_file('core', 'authentification', 'php');
-if (!isConnect()) {
+if (! isConnect()) {
     include_file('desktop', '404', 'php');
     die();
 }
 ?>
 <!--------------------- EXEMPLE DE PAGE DE CONFIGURATION ------------------------------>
 <form class="form-horizontal">
-    <fieldset>
-    	<div class="form-group">
-            <label class="col-lg-4 control-label">{{Adresse IP du serveur connecté HDMI}}</label>
-            <div class="col-lg-2">
-                <input class="configKey form-control" data-l1key="hdmiCecIp" value="127.0.0.1" placeholder="{{adr Ip}}"/>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-lg-4 control-label">{{Port du serveur}}</label>
-            <div class="col-lg-2">
-                <input class="configKey form-control" data-l1key="hdmiCecPort" value="6000" placeholder="{{n° port}}"/>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-lg-4 control-label">{{Nom (OSD)}}</label>
-            <div class="col-lg-2">
-                <input class="configKey form-control" data-l1key="hdmiCecOsdName" value="Jeedom" placeholder="{{nom à afficher (OSD)}}"/>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-lg-4 control-label">{{Adresse logique CEC}}</label>
-            <div class="col-lg-2">
-                <select class="configKey form-control" data-l1key="deviceCecType">
-                    <option value="RecordingDevice">Recording Device</option>
-                    <option value="TunerDevice">Tuner Device</option>
-                    <option value="PaybackDevice">Payback Device</option>
-                    <option value="AudioSystemDevice">Audio System Device</option>
-                </select>
-                <!--
+	<fieldset>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Adresse IP du serveur
+				connecté HDMI}}</label>
+			<div class="col-lg-2">
+				<input class="configKey form-control" data-l1key="hdmiCecIp"
+					value="127.0.0.1" placeholder="{{adr Ip}}" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Port du serveur}}</label>
+			<div class="col-lg-2">
+				<input class="configKey form-control" data-l1key="hdmiCecPort"
+					value="6000" placeholder="{{n° port}}" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Utilisateur}}</label>
+			<div class="col-lg-2">
+				<input class="configKey form-control" data-l1key="hdmiCecUser"
+					value="root" placeholder="{{utilisateur}}" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Mot de passe}}</label>
+			<div class="col-lg-2">
+				<input class="configKey form-control" data-l1key="hdmiCecPassword"
+					value="password" placeholder="{{mot de passe}}" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Nom (OSD)}}</label>
+			<div class="col-lg-2">
+				<input class="configKey form-control" data-l1key="hdmiCecOsdName"
+					value="Jeedom" placeholder="{{nom à afficher (OSD)}}" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Adresse logique CEC}}</label>
+			<div class="col-lg-2">
+				<select class="configKey form-control" data-l1key="deviceCecType">
+					<option value="RecordingDevice">Recording Device</option>
+					<option value="TunerDevice">Tuner Device</option>
+					<option value="PaybackDevice">Payback Device</option>
+					<option value="AudioSystemDevice">Audio System Device</option>
+				</select>
+				<!--
                 	<option value="Recorder 1">Recorder 1</option>
                     <option value="Recorder 2">Recorder 2</option>
                     <option value="Tuner 1">Tuner 1</option>
@@ -68,27 +85,33 @@ if (!isConnect()) {
                     <option value="Reserved 2">Reserved 2</option>
                     <option value="Free use">Free use</option>
                  -->
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-lg-4 control-label">{{Inclusion automatique}}</label>
-            <div class="col-lg-2">
-            	<input type="checkbox" class="configKey form-control bootstrapSwitch" data-label-text="{{Activer}}" data-l1key="inclusionEnable" checked/>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-lg-4 control-label">{{}}</label>
-            <div class="col-lg-2">
-              <a class="btn btn-default" id="bt_synchdmiCec"><i class="fa fa-retweet"></i> Synchroniser</a>
-          </div>
-      </div>
-      <div class="form-group">
-            <label class="col-lg-4 control-label">{{}}</label>
-            <div class="col-lg-2">
-              <a class="btn btn-default" id="bt_detecthdmiCec"><i class="fa fa-retweet"></i> Détection</a>
-          </div>
-      </div>
-  </fieldset>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{Inclusion automatique}}</label>
+			<div class="col-lg-2">
+				<label class="checkbox-inline">
+				<input type="checkbox"
+					class="configKey form-control"
+					data-label-text="{{Activer}}" data-l1key="inclusionEnable" checked />
+				</label>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{}}</label>
+			<div class="col-lg-2">
+				<a class="btn btn-default" id="bt_synchdmiCec"><i
+					class="fa fa-retweet"></i> Synchroniser</a>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-lg-4 control-label">{{}}</label>
+			<div class="col-lg-2">
+				<a class="btn btn-default" id="bt_detecthdmiCec"><i
+					class="fa fa-retweet"></i> Détection</a>
+			</div>
+		</div>
+	</fieldset>
 </form>
 
 <script>

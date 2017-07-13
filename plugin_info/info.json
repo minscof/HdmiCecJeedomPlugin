@@ -1,0 +1,14 @@
+{
+	"id":"hdmiCec",
+	"name":"HDMI contrôle (CEC)",
+	"description":"test",
+	"icon":"icon animal-sheep1",
+	"licence":"AGPL",
+	"author":"Minscof",
+	"installation":"L'installation ajoute les librairies libCEC. Il faut que le système dispose de python en version 2.7 avec le module",
+	"require":"2.0.1",
+	"category":"multimedia",
+	"hasDependency":true,
+	"hasOwnDeamon": true,
+	"version":"0.1.1"
+}
