@@ -19,7 +19,7 @@ import regex
 import exceptions
 import threading 
 
-
+__version__='0.9'
 #print(cec)
 
 cecList = ["TV","Recorder 1","Recorder 2","Tuner 1","Playback 1","Audio","Tuner 2","Tuner 3","Playback 2","Recorder 3","Tuner 4","Playback 3","Reserved 1","Reserved 2","Free use","Broadcast"]

@@ -1,13 +1,67 @@
 {
-    "plugins\/hdmiCec\/plugin_info\/info.xml": {
-        "Plugin hdmiCec": "Plugin hdmiCec traduit",
-        "Aucune": "Aucune traduit"
-    },
-    "plugins\/hdmiCec\/desktop\/js\/hdmiCec.js": {
-        "Historiser": "Historiser",
-        "Tester": "Tester"
-    },
-    "plugins\/hdmiCec\/core\/class\/hdmiCec.class.php": {
-        "Etat": "Etat traduit"
-    }
+	"plugins\/hdmiCec\/plugin_info\/info.xml": {
+		"Plugin hdmiCec": "Plugin hdmiCec traduit",
+		"Aucune": "Aucune traduit",
+		"test": "test",
+		"L'installation ajoute les librairies libCEC. Il faut que le système dispose de python en version 2.7. Un serveur est utilisé pour écouter et transmettre les ordres  via le canal HDMI-CEC. Le port 6000 est recommandé. L'adresse logique CEC Recording Device est recommandée : elle indique comment jeedom se présente sur le réseau CEC HDMI. L'inclusion automatique permet d'ajouter de nouveaux équipements implicitement.  Le fonctionnement standard est de demander une détection alors que tous les équipements sont sous tension. La synchronisation permet de forcer une mise à jour des équipements déjà connus et uniquement eux.": "L'installation ajoute les librairies libCEC. Il faut que le système dispose de python en version 2.7. Un serveur est utilisé pour écouter et transmettre les ordres  via le canal HDMI-CEC. Le port 6000 est recommandé. L'adresse logique CEC Recording Device est recommandée : elle indique comment jeedom se présente sur le réseau CEC HDMI. L'inclusion automatique permet d'ajouter de nouveaux équipements implicitement.  Le fonctionnement standard est de demander une détection alors que tous les équipements sont sous tension. La synchronisation permet de forcer une mise à jour des équipements déjà connus et uniquement eux."
+	},
+	"plugins\/hdmiCec\/desktop\/js\/hdmiCec.js": {
+		"Historiser": "Historiser",
+		"Tester": "Tester",
+		"Afficher": "Afficher",
+		"Inverser": "Inverser",
+		"Min": "Min",
+		"Max": "Max"
+	},
+	"plugins\/hdmiCec\/core\/class\/hdmiCec.class.php": {
+		"Etat": "Etat traduit",
+		"Daemon": "Daemon",
+		"Aucun": "Aucun",
+		"Info": "Info",
+		"On": "On",
+		"Off": "Off"
+	},
+	"plugins\/hdmiCec\/desktop\/php\/hdmiCec.php": {
+		"Rechercher": "Rechercher",
+		"Mes dispositifs": "Mes dispositifs",
+		"Général": "Général",
+		"Nom de l'équipement": "Nom de l'équipement",
+		"Objet parent": "Objet parent",
+		"Aucun": "Aucun",
+		"Catégorie": "Catégorie",
+		"Activer": "Activer",
+		"Visible": "Visible",
+		"Configuration": "Configuration",
+		"Type": "Type",
+		"Téléviseur": "Téléviseur",
+		"Amplificateur": "Amplificateur",
+		"Tuner": "Tuner",
+		"Lecteur DVD": "Lecteur DVD",
+		"Raspberry Pi": "Raspberry Pi",
+		"Jeedom Box": "Jeedom Box",
+		"Autre": "Autre",
+		"Modèle": "Modèle",
+		"Informations": "Informations",
+		"Nom :": "Nom :",
+		"Marque :": "Marque :",
+		"Adresse logique :": "Adresse logique :",
+		"Adresse physique:": "Adresse physique:",
+		"Tableau des commandes": "Tableau des commandes",
+		"Nom": "Nom",
+		"Options": "Options",
+		"Actions": "Actions",
+		"Supprimer": "Supprimer",
+		"Sauvegarder": "Sauvegarder"
+	},
+	"plugins\/hdmiCec\/plugin_info\/configuration.php": {
+		"Port du serveur": "Port du serveur",
+		"n° port": "n° port",
+		"Nom (OSD)": "Nom (OSD)",
+		"nom à afficher (OSD)": "nom à afficher (OSD)",
+		"Adresse logique CEC": "Adresse logique CEC",
+		"Inclusion automatique": "Inclusion automatique",
+		"Activer": "Activer",
+		"Synchronisation réussie": "Synchronisation réussie",
+		"Détection terminée : consulter les logs (pas ceux du démon, mais du plugin) pour connaître le résultat": "Détection terminée : consulter les logs (pas ceux du démon, mais du plugin) pour connaître le résultat"
+	}
 }

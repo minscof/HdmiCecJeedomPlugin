@@ -1,7 +1,14 @@
-<div class="cmd cmd-widget" data-type="action" data-subtype="message" data-cmd_id="#id#" data-cmd_uid="#uid#" style="width: 146px;">
-	<input class="form-control input-sm title" placeholder="#title_placeholder#" data-cmd_id="#id#"/>
-	<textarea class="form-control input-sm message" rows="2" style="margin-top : 5px; resize:vertical;height: 50px;" placeholder="#message_placeholder#" data-cmd_uid="#uid#" data-cmd_id="#id#"></textarea>
-	<center><a class='btn btn-success btn-xs execute cmdName'>#name_display#</a></center>
+<div class="cmd cmd-widget" data-type="action" data-subtype="message"
+	data-cmd_id="#id#" data-cmd_uid="#uid#" style="width: 146px;">
+	<input class="form-control input-sm title"
+		placeholder="#title_placeholder#" data-cmd_id="#id#" />
+	<textarea class="form-control input-sm message" rows="2"
+		style="margin-top: 5px; resize: vertical; height: 50px;"
+		placeholder="#message_placeholder#" data-cmd_uid="#uid#"
+		data-cmd_id="#id#"></textarea>
+	<center>
+		<a class='btn btn-success btn-xs execute cmdName'>#name_display#</a>
+	</center>
 	<script>
 		alert('coucou');
 		$('.cmd[data-cmd_uid=#uid#] .title').hide();
