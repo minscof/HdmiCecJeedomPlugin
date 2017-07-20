@@ -129,6 +129,7 @@ class hdmiCec extends eqLogic
         self::deamon_stop();
         $shell = realpath(dirname(__FILE__)).'/../../resources/hdmiCec_server.py';
         $string = file_get_contents($shell);
+        $matches=array(0,'inconnu');
         preg_match("/__version__='([0-9.]+)/mis", $string, $matches);
         config::save('daemonVer', 'Version '.$matches[1],  'hdmiCec');
         $deamon_info = self::deamon_info();
