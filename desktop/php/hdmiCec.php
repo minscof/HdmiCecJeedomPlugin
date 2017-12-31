@@ -195,7 +195,8 @@ $eqLogics = eqLogic::byType('hdmiCec');
 		<table id="table_cmd" class="table table-bordered table-condensed">
 			<thead>
 				<tr>
-					<th style="width: 300px;">{{Nom}}</th>
+					<th style="width: 200px;">{{Nom}}</th>
+                    <th style="width: 150px;">{{Type}}</th>
 					<th>{{Options}}</th>
 					<th>{{Actions}}</th>
 				</tr>

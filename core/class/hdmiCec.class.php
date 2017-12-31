@@ -136,7 +136,7 @@ class hdmiCec extends eqLogic
         if ($deamon_info['launchable'] != 'ok') {
             throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
         }
-        log::add('hdmiCec', 'info', 'Lancement du daemon hdmiCec '.matches[1]);
+        log::add('hdmiCec', 'info', 'Lancement du daemon hdmiCec '.$matches[1]);
         
         log::add('hdmiCec', 'debug', 'nom complet du daemon hdmiCec : ' . $shell);
         // TODO il faut lancer le serveur hdmi sur la machine Ip définie, pas uniquement en local
