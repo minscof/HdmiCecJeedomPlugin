@@ -16,6 +16,8 @@ sleep 1
 #sudo apt-get install cmake liblockdev1-dev libudev-dev libxrandr-dev python-dev swig
 #python-regex is reqired because internal regular expression do no not work (trap)
 #sudo apt-get install python-regex
+#sudo pip2 install cec
+#sudo pip2 install regex
 touch /tmp/hdmiCec_dep
 echo "Début de l'installation"
 echo 10 > /tmp/hdmiCec_dep

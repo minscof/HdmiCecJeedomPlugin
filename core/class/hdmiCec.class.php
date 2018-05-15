@@ -1147,6 +1147,11 @@ class hdmiCecCmd extends cmd
                 $_options['title'] = 'TV';
                 $_options['message'] = '44:' . SelectAV;
                 break;
+            case "setInput":
+                $action = 'transmit';
+                $_options['title'] = 'TV';
+                $_options['message'] = 'HDMI1';
+                break;
         }
         $b = print_r($_options, true);
         log::add('hdmiCec', 'debug', 'Commande reçue à exécuter : ' . $this->getConfiguration('request') . ' de type ' . $this->type . ' paramètres =' . $b);
