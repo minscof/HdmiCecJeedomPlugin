@@ -171,6 +171,7 @@ class hdmiCec extends eqLogic
 
     public static function deamon_stop()
     {
+		log::add('hdmiCec', 'info', 'Arrêt demandé du service hdmiCec');
         $opts = array(
             'http' => array(
                 'method' => "GET",
@@ -184,12 +185,12 @@ class hdmiCec extends eqLogic
         $deamon_info = self::deamon_info();
         if ($deamon_info['state'] == 'ok') {
             sleep(2);
-            exec('sudo kill $(ps aux | grep "cecHdmi_server" | grep -v "grep" | awk \'{print $2}\')');
+            exec('sudo kill $(ps aux | grep "hdmiCec_server" | grep -v "grep" | awk \'{print $2}\')');
         }
         $deamon_info = self::deamon_info();
         if ($deamon_info['state'] == 'ok') {
             sleep(2);
-            exec('sudo kill -9 $(ps aux | grep "cecHdmi_server" | awk \'{print $2}\')');
+            exec('sudo kill -9 $(ps aux | grep "hdmiCec_server" | awk \'{print $2}\')');
         }
         //config::save('daemon', '0', 'hdmiCec');
     }
@@ -658,7 +659,7 @@ class hdmiCec extends eqLogic
     public function postSave()
     {
         
-        // log::add ('hdmiCec','debug','postsave: '.$this->getId());
+        //log::add ('hdmiCec','debug','postsave id equipment : '.$this->getId());
         
         // création de la commande info sur le status
         $status = $this->getCmd(null, 'status');
@@ -668,9 +669,9 @@ class hdmiCec extends eqLogic
             $status->setIsVisible(1);
             $status->setIsHistorized(1);
             $status->setName(__('Etat', __FILE__));
+            $status->setSubType('numeric');
         }
         $status->setType('info');
-        $status->setSubType('numeric');
         $status->setEventOnly(1);
         $status->setEqLogic_id($this->getId());
         $status->save();
@@ -723,10 +724,7 @@ class hdmiCec extends eqLogic
         $off->save();
         
         // création de la commande info sur input uniquement pour la TV et l'ampli (AUDIO)
-        if (in_array($this->getConfiguration('logicalAddress'), array(
-            'TV',
-            'Audio'
-        ))) {
+        if (in_array($this->getConfiguration('logicalAddress'), array('TV','Audio'))) {
             $input = $this->getCmd(null, 'input');
             if (! is_object($input)) {
                 $input = new hdmiCecCmd();

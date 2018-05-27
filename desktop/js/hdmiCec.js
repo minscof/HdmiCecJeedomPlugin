@@ -30,7 +30,7 @@
 $("#sel_periphType").change(function() {
 	// alert($(.li_eqLogic.active).getAttribute["data-eqLogic_id"]);
 	nodeId = $('.li_eqLogic.active').attr("data-eqLogic_id");
-	//test1();
+	//test2();
 	$.ajax({// fonction permettant de faire de l'ajax
 		type : "POST", // méthode de transmission des données au fichier php
 		url : "plugins/hdmiCec/core/ajax/hdmiCec.ajax.php", // url du fichier
@@ -57,6 +57,7 @@ $("#sel_periphType").change(function() {
 				var value = data.result[i]['value'];
 				options += '<option value="' + i + '">' + value + '</option>';
 			}*/
+
 			$.each(JSON.parse(data.result), function(index, value) {
 				options += '<option value="'+ index +'">'+ value +'</option>';
             });
@@ -103,7 +104,7 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').on('change',functi
 	}
 });
 
-
+/*
 $('.eqLogicAttr[data-l1keyOLP=configuration][data-l2key=periphTypeOLD]').on('change', function() {
 	if (!$(this).value()) return;
 	alert('onchange periph='+$(this).value());
@@ -128,7 +129,7 @@ $('.eqLogicAttr[data-l1keyOLP=configuration][data-l2key=periphTypeOLD]').on('cha
                 }
             	//attention il faut sauvegarder la valeur sélectionnée avant de vider la liste !
             	eq=$('.eqLogicAttr[data-eqLogic_id]').val();
-            	test1();
+            	test2();
             	save = $('.eqLogicAttr[data-l1key=configuration][data-l2key=model] option:selected').val();
             
             	alert('valeur choisie avant effacement='+save);
@@ -143,14 +144,15 @@ $('.eqLogicAttr[data-l1keyOLP=configuration][data-l2key=periphTypeOLD]').on('cha
                 	//alert('image='+$('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').value())
                 	$('#img_hdmiCecModel').attr('src','plugins/hdmiCec/core/template/images/'+$('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').value()+'.jpg');
                 }
-                test1();
+                test2();
             }
         });
     }
 });
-   
+*/
+  
 
-function test1(){
+function test2(){
         console.trace();
     }
 
@@ -164,11 +166,12 @@ function addCmdToTable(_cmd) {
     }
     var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
     tr += '<td>';
-    tr += '<input class="cmdAttr" data-l1key="id" style="display : none;">';
-    tr += '<span class="cmdAttr form-control input-sm" data-l1key="name">';
+    tr += '<span class="cmdAttr" data-l1key="id" ></span>';
     tr += '</td>';
     tr += '<td>';
-    tr += '<input class="cmdAttr form-control type input-sm" data-l1key="type" value="info" disabled style="margin-bottom : 5px;" />';
+    tr += '<span class="cmdAttr form-control input-sm" data-l1key="name">';
+    tr += '</td>';
+    tr += '<td class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType();
 	tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
 	tr += '</td>';
     tr += '<td>';
@@ -181,8 +184,6 @@ function addCmdToTable(_cmd) {
     //tr += '<input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width : 40%;display : inline-block;">';
     tr += '</td>';
     tr += '<td>';
-    tr += '<input class="cmdAttr form-control input-sm" data-l1key="type" style="display : none;">';
-    tr += '<input class="cmdAttr form-control input-sm" data-l1key="subType" style="display : none;">';
     if (is_numeric(_cmd.id)) {
         tr += '<a class="btn btn-default btn-xs cmdAction expertModeVisible" data-action="configure"><i class="fa fa-cogs"></i></a> ';
         tr += '<a class="btn btn-default btn-xs cmdAction" data-action="test"><i class="fa fa-rss"></i> {{Tester}}</a>';

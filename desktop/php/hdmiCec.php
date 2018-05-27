@@ -111,13 +111,12 @@ $eqLogics = eqLogic::byType('hdmiCec');
 						<div class="form-group">
 							<label class="col-sm-2 control-label"></label>
 							<div class="col-sm-9">
-								<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr"
-									data-label-text="{{Activer}}" data-l1key="isEnable" checked /></label>
-								<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr"
-									data-label-text="{{Visible}}" data-l1key="isVisible" checked /></label>
+								<label class="checkbox-inline"><input type="checkbox"
+									class="eqLogicAttr" data-l1key="isEnable" checked />{{Activer}}</label>
+								<label class="checkbox-inline"><input type="checkbox"
+									class="eqLogicAttr" data-l1key="isVisible" checked />{{Visible}}</label>
 							</div>
 						</div>
-
 
 						<legend>
 							<i class="fa fa-wrench"></i> {{Configuration}}
@@ -195,10 +194,11 @@ $eqLogics = eqLogic::byType('hdmiCec');
 		<table id="table_cmd" class="table table-bordered table-condensed">
 			<thead>
 				<tr>
-					<th style="width: 200px;">{{Nom}}</th>
-                    <th style="width: 150px;">{{Type}}</th>
-					<th>{{Options}}</th>
-					<th>{{Actions}}</th>
+					<th style="width: 40px;">#</th>
+					<th style="width: 190px;">{{Nom}}</th>
+                    <th style="width: 130px;">{{Type}}</th>
+					<th style="width: 200px;">{{Paramètres}}</th>
+					<th style="width: 100px;"></th>
 				</tr>
 			</thead>
 			<tbody>
