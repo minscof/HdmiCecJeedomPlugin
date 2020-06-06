@@ -285,7 +285,9 @@ class hdmiCec extends eqLogic
                         $power = $value;
                 }
             }
-            log::add('hdmiCec', 'debug', 'Equipement trouvé : ' . $a);
+            log::add('hdmiCec', 'debug', '________________________________');
+            log::add('hdmiCec', 'debug', '|Equipement trouvé : ' . $a);
+            log::add('hdmiCec', 'debug', '|_______________________________');
             self::saveEquipment($vendor, $logicalAddress, $physicalAddress, $osdName, $cecVersion, $power);
         }
         log::add('hdmiCec', 'info', '******** Fin du scan de la connexion hdmi - nombre d\'équipements trouvés = ' . $count . ' ********');
@@ -293,7 +295,7 @@ class hdmiCec extends eqLogic
 
     public static function saveEquipment($vendor, $logicalAddress, $physicalAddress, $osdName, $cecVersion, $power)
     {
-        log::add('hdmiCec', 'debug', 'Début saveEquipment =' . $logicalAddress);
+        log::add('hdmiCec', 'debug', '  Début saveEquipment =' . $logicalAddress);
         $vendor = init('vendor', $vendor);
         $logicalAddress = init('logicalAddress', $logicalAddress);
         $physicalAddress = init('physicalAddress', $physicalAddress);
@@ -301,10 +303,10 @@ class hdmiCec extends eqLogic
         $cecVersion = init('cecVersion', $cecVersion);
         // $id = $osdName.'-'.$vendor.'-'.$logicalAddress.'-'.$physicalAddress.'-'.$cecVersion;
         $id = $logicalAddress;
-        log::add('hdmiCec', 'debug', 'adresse logique de l\'équipement détecté : ' . $id);
+        //log::add('hdmiCec', 'debug', '  Adresse logique de l\'équipement détecté : ' . $id);
         $elogic = self::byLogicalId($id, 'hdmiCec');
         if (is_object($elogic)) {
-            log::add('hdmiCec', 'debug', 'Equipement déjà existant - mise à jour des informations de l\'équipement détecté : ' . $id);
+            log::add('hdmiCec', 'debug', '  Equipement déjà existant - mise à jour des informations de l\'équipement détecté : ' . $id);
             $save = false;
             if ($elogic->getConfiguration('vendor', '') != $vendor) {
                 $elogic->setConfiguration('vendor', $vendor);
@@ -327,20 +329,21 @@ class hdmiCec extends eqLogic
                 $save = true;
             }
             $statusCmd = $elogic->getCmd(null, 'status');
-            log::add('hdmiCec', 'debug', 'Valeur du status de l\'équipement existant :' . $statusCmd->getValue() . ' - power=' . $power);
+            log::add('hdmiCec', 'debug', '  Valeur du status de l\'équipement existant :' . $statusCmd->getValue() . ' - power=' . $power);
             if ($statusCmd->getValue() != $value = self::convertStatus($power)) {
-                log::add('hdmiCec', 'debug', 'Mise à jour du status de l\'équipement existant :' . self::convertStatus($power) . ' au lieu de ' . $statusCmd->getValue());
+                log::add('hdmiCec', 'debug', '  Mise à jour du status de l\'équipement existant :' . self::convertStatus($power) . ' au lieu de ' . $statusCmd->getValue());
                 $statusCmd->setValue(self::convertStatus($power));
                 $statusCmd->save();
             }
             if ($save) {
                 // log::add('hdmiCec', 'debug', 'Avant mise à jour d\'un équipement existant :' . $elogic->getName());
                 $elogic->save();
-                log::add('hdmiCec', 'debug', 'Après mise à jour d\'un équipement existant :' . $elogic->getName());
+                log::add('hdmiCec', 'debug', '  Mise à jour d\'un équipement existant terminée :' . $elogic->getName());
             } else {
-                log::add('hdmiCec', 'debug', 'Aucune mise à jour à apporter à cet équipement existant :' . $elogic->getName());
+                log::add('hdmiCec', 'debug', '  Aucune mise à jour à apporter à cet équipement existant :' . $elogic->getName());
             }
         } else {
+            log::add('hdmiCec', 'debug', '  Nouvel Equipement : ' . $id);
             $equipment = new hdmiCec();
             $equipment->setEqType_name('hdmiCec');
             $equipment->setLogicalId($id);
@@ -351,17 +354,17 @@ class hdmiCec extends eqLogic
             $equipment->setConfiguration('cecVersion', $cecVersion);
             $name = $osdName . ' - ' . $vendor;
             $newName = $name;
-            log::add('hdmiCec', 'debug', 'Choix a priori du nom de cet équipement :' . $name);
+            log::add('hdmiCec', 'debug', '  Choix a priori du nom de cet équipement :' . $name);
             $i = 1;
             while (self::byObjectNameEqLogicName(__('Aucun', __FILE__), $newName)) {
                 $newName = $name . ' - ' . $i ++;
             }
             $equipment->setName($newName);
-            log::add('hdmiCec', 'debug', 'Choix du nom de cet équipement :' . $newName);
+            log::add('hdmiCec', 'debug', '  Choix du nom de cet équipement :' . $newName);
             $equipment->setIsEnable(true);
             $equipment->setIsVisible(true);
             $equipment->save();
-            log::add('hdmiCec', 'debug', 'Ajout d\'un nouvel équipement :' . $equipment->getName() . ' - LogicalId=' . $id);
+            log::add('hdmiCec', 'debug', '  Ajout terminé d\'un nouvel équipement :' . $equipment->getName() . ' - LogicalId=' . $id);
         }
     }
 
@@ -438,147 +441,147 @@ class hdmiCec extends eqLogic
                     $cmd->setCollectDate('');
                     $cmd->event($value);
                     $changed = true;
-                }
                 
-                // traitement des cas particuliers
                 
-                // passe à On ou Standby les équipements à Off qui émettent des événements ( TV => standby, autres équipements On)
-                // Off veut dire éteint, c'est different de Standby (en veille)
-                if (! (($key == 'status') and ($value == self::convertStatus("Off")))) {
-                    log::add('hdmiCec', 'debug', '  Ce n\'est pas un passage à Off vérif status actuel for: ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
-                    if ($key != 'status') {
-                        if ($cmd = $eqLogic->getCmd(null, 'status')) {
-                            log::add('hdmiCec', 'debug', '  Ce n\'est pas une commande de changement de status et voici le status actuel = ' . $cmd->execCmd(null, 2));
-                            if ($cmd->execCmd(null, 2) == self::convertStatus('Off')) {
-                                
-                                log::add('hdmiCec', 'debug', '  On passe par déduction l\'équipement de Off à Standby puisqu\'il dialogue. Il est erroné de penser qu\'il est on. On pourrait lancer un polling pour lever le doute.');
-                                $cmd->event(self::convertStatus('Standby'));
-                                $changed = true;
-                                
-                                // Est-ce qu'il a un équipement lié à passer en standby ?$eqType_name = 'hdmiCec';
-                                $configuration = '"physicalAddress":"' . $eqLogic->getConfiguration("physicalAddress") . '"';
-                                $eqLogicBounds = eqLogic::byTypeAndSearhConfiguration('hdmiCec', $configuration);
-                                foreach ($eqLogicBounds as $eqLogicBound) {
-                                    if ($eqLogic->getName() == $eqLogicBound->getName())
-                                        continue;
-                                    log::add('hdmiCec', 'debug', '  Equipement trouvé lié - nom: ' . $eqLogicBound->getName() . ' LogicalId=' . $eqLogicBound->getLogicalId());
-                                    if ($cmd = $eqLogicBound->getCmd(null, 'status')) {
-                                        log::add('hdmiCec', 'debug', '  Cet équipement lié a ce status = ' . $cmd->execCmd(null, 2));
-                                        if ($cmd->execCmd(null, 2) == self::convertStatus('Off')) {
-                                            log::add('hdmiCec', 'debug', '  On passe aussi l\'équipement lié à Standby');
-                                            $cmd->event(self::convertStatus('Standby'));
-                                            $changed = true;
+                    // traitement des cas particuliers
+                    
+                    // passe à On ou Standby les équipements à Off qui émettent des événements ( TV => standby, autres équipements On)
+                    // Off veut dire éteint, c'est different de Standby (en veille)
+                    if (! (($key == 'status') and ($value == self::convertStatus("Off")))) {
+                        log::add('hdmiCec', 'debug', '  Ce n\'est pas un passage à Off vérif status actuel for: ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
+                        if ($key != 'status') {
+                            if ($cmd = $eqLogic->getCmd(null, 'status')) {
+                                log::add('hdmiCec', 'debug', '  Ce n\'est pas une commande de changement de status et voici le status actuel = ' . $cmd->execCmd(null, 2));
+                                if ($cmd->execCmd(null, 2) == self::convertStatus('Off')) {
+                                    
+                                    log::add('hdmiCec', 'debug', '  On passe par déduction l\'équipement de Off à Standby puisqu\'il dialogue. Il est erroné de penser qu\'il est on. On pourrait lancer un polling pour lever le doute.');
+                                    $cmd->event(self::convertStatus('Standby'));
+                                    $changed = true;
+                                    
+                                    // Est-ce qu'il a un équipement lié à passer en standby ?$eqType_name = 'hdmiCec';
+                                    $configuration = '"physicalAddress":"' . $eqLogic->getConfiguration("physicalAddress") . '"';
+                                    $eqLogicBounds = eqLogic::byTypeAndSearhConfiguration('hdmiCec', $configuration);
+                                    foreach ($eqLogicBounds as $eqLogicBound) {
+                                        if ($eqLogic->getName() == $eqLogicBound->getName())
+                                            continue;
+                                        log::add('hdmiCec', 'debug', '  Equipement trouvé lié - nom: ' . $eqLogicBound->getName() . ' LogicalId=' . $eqLogicBound->getLogicalId());
+                                        if ($cmd = $eqLogicBound->getCmd(null, 'status')) {
+                                            log::add('hdmiCec', 'debug', '  Cet équipement lié a ce status = ' . $cmd->execCmd(null, 2));
+                                            if ($cmd->execCmd(null, 2) == self::convertStatus('Off')) {
+                                                log::add('hdmiCec', 'debug', '  On passe aussi l\'équipement lié à Standby');
+                                                $cmd->event(self::convertStatus('Standby'));
+                                                $changed = true;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                
-                // si status passe à Standby et qu'il existe equipement lié, les passer à Standby sauf si c'est un tuner qui passe à Standby (cas particulier du cas particulier...)
-                if ((($key == 'status') and ($value == self::convertStatus('Standby')) and (strpos($eqLogic->getLogicalId(), 'Tuner') === false))) {
-                    log::add('hdmiCec', 'debug', '  Un appareil autre qu\'un Tuner vient de passer à Standby ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
                     
-                    $configuration = '"physicalAddress":"' . $eqLogic->getConfiguration("physicalAddress") . '"';
-                    $eqLogicBounds = eqLogic::byTypeAndSearhConfiguration('hdmiCec', $configuration);
-                    foreach ($eqLogicBounds as $eqLogicBound) {
-                        if ($eqLogic->getName() == $eqLogicBound->getName())
-                            continue;
-                        log::add('hdmiCec', 'debug', '  équipement différent trouvé lié - nom: ' . $eqLogicBound->getName() . ' LogicalId=' . $eqLogicBound->getLogicalId());
+                    // si status passe à Standby et qu'il existe equipement lié, les passer à Standby sauf si c'est un tuner qui passe à Standby (cas particulier du cas particulier...)
+                    if ((($key == 'status') and ($value == self::convertStatus('Standby')) and (strpos($eqLogic->getLogicalId(), 'Tuner') === false))) {
+                        log::add('hdmiCec', 'debug', '  Un appareil autre qu\'un Tuner vient de passer à Standby ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
                         
-                        if ($cmd = $eqLogicBound->getCmd(null, 'status')) {
-                            log::add('hdmiCec', 'debug', '  Cet équipement lié a ce status = ' . $cmd->execCmd(null, 2));
-                            if ($cmd->execCmd(null, 2) != self::convertStatus('Standby')) {
-                                log::add('hdmiCec', 'debug', '  Equipement lié passé aussi à Standby');
-                                $cmd->event(self::convertStatus('Standby'));
-                                $changed = true;
-                            }
-                        }
-                    }
-                } else {
-                    log::add('hdmiCec', 'debug', '  Ce n\'est pas un passage à Standby: ' . $key . '=' . $value . ' - ou c\'est un Tuner :' . $eqLogic->getLogicalId() . ' - strpos =' . strpos($eqLogic->getLogicalId(), "Tuner"));
-                }
-                
-                // passe le tuner à on et l'ampli sur tuner si même adresse physique ampli et tuner
-                log::add('hdmiCec', 'debug', '  Recherche du mot clé Tuner dans LogicalId de équipement :' . $eqLogic->getLogicalId() . ' (0=vrai): ' . strpos($eqLogic->getLogicalId(), 'Tuner'));
-                if ((($key == 'info') and ($value == 'started to transmit') and (strpos($eqLogic->getLogicalId(), 'Tuner') !== false))) {
-                    log::add('hdmiCec', 'debug', '  Un tuner vient d etre allumé ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
-                    
-                    if ($cmd->execCmd(null, 2) != self::convertStatus('On')) {
-                        log::add('hdmiCec', 'debug', '  Tuner qui émet, on le passe à On');
-                        $cmd->event(self::convertStatus('On'));
-                        $changed = true;
-                    }
-                    
-                    if ($eqLogicAudio = eqLogic::byLogicalId('Audio', 'hdmiCec')) {
-                        if ($eqLogicAudio->getConfiguration("physicalAddress") == $eqLogic->getConfiguration("physicalAddress")) {
-                            log::add('hdmiCec', 'debug', '  ampli trouvé lié au tuner');
-                            
-                            if ($cmd = $eqLogicAudio->getCmd(null, 'status')) {
-                                log::add('hdmiCec', 'debug', '  L\'ampli a ce status actuel = ' . $cmd->execCmd(null, 2));
-                                if ($cmd->execCmd(null, 2) == self::convertStatus('Standby')) {
-                                    log::add('hdmiCec', 'debug', '  on le passe à On');
-                                    $cmd->event(self::convertStatus('On'));
-                                    $changed = true;
-                                }
-                            }
-                            // passer l'input de l'ampli à Tuner !
-                            if ($cmd = $eqLogicAudio->getCmd(null, 'input')) {
-                                if ($cmd->execCmd(null, 2) != 'Tuner') {
-                                    log::add('hdmiCec', 'debug', '  on passe entrée ampli sur Tuner');
-                                    $cmd->event('Tuner');
-                                    $changed = true;
-                                }
-                            }
-                        } else {
-                            log::add('hdmiCec', 'debug', '  aucun ampli est lié au tuner');
-                        }
-                    }
-                }
-                
-                // inversement passer le tuner sur standby si l'entrée choisie pour l'ampli n'est pas tuner
-                if ((($key == 'input') and ($value != 'Tuner') and ($eqLogic->getLogicalId() == 'Audio'))) {
-                    log::add('hdmiCec', 'debug', '  Un ampli vient de passer sur une entrée différente de Tuner ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
-                    // par sécurité on vérifie que l'ampli est bien à On
-                    if ($cmd = $eqLogic->getCmd(null, 'status')) {
-                        log::add('hdmiCec', 'debug', '  L\'ampli a ce status actuel = ' . $cmd->execCmd(null, 2));
-                        if ($cmd->execCmd(null, 2) != self::convertStatus('On')) {
-                            log::add('hdmiCec', 'debug', '  on passe l\'ampli à On');
-                            $cmd->event(self::convertStatus('On'));
-                            $changed = true;
-                        }
-                    }
-                    
-                    $configuration = '"physicalAddress":"' . $eqLogic->getConfiguration("physicalAddress") . '"';
-                    $eqLogicBounds = eqLogic::byTypeAndSearhConfiguration('hdmiCec', $configuration);
-                    foreach ($eqLogicBounds as $eqLogicBound) {
-                        if ($eqLogic->getName() == $eqLogicBound->getName())
-                            continue;
-                        log::add('hdmiCec', 'debug', '  Equipement lié trouvé - nom: ' . $eqLogicBound->getName() . ' LogicalId=' . $eqLogicBound->getLogicalId());
-                        if (strpos($eqLogicBound->getLogicalId(), 'Tuner') !== false) {
-                            log::add('hdmiCec', 'debug', '  Tuner trouvé lié à ampli ' . $eqLogicBound->getName());
+                        $configuration = '"physicalAddress":"' . $eqLogic->getConfiguration("physicalAddress") . '"';
+                        $eqLogicBounds = eqLogic::byTypeAndSearhConfiguration('hdmiCec', $configuration);
+                        foreach ($eqLogicBounds as $eqLogicBound) {
+                            if ($eqLogic->getName() == $eqLogicBound->getName())
+                                continue;
+                            log::add('hdmiCec', 'debug', '  équipement différent trouvé lié - nom: ' . $eqLogicBound->getName() . ' LogicalId=' . $eqLogicBound->getLogicalId());
                             
                             if ($cmd = $eqLogicBound->getCmd(null, 'status')) {
-                                log::add('hdmiCec', 'debug', '  Le tuner a ce status = ' . $cmd->execCmd(null, 2));
+                                log::add('hdmiCec', 'debug', '  Cet équipement lié a ce status = ' . $cmd->execCmd(null, 2));
                                 if ($cmd->execCmd(null, 2) != self::convertStatus('Standby')) {
-                                    log::add('hdmiCec', 'debug', '  Equipement lié passé à Standby');
+                                    log::add('hdmiCec', 'debug', '  Equipement lié passé aussi à Standby');
                                     $cmd->event(self::convertStatus('Standby'));
                                     $changed = true;
                                 }
                             }
-                        } else {
-                            log::add('hdmiCec', 'debug', '  Equipement trouvé lié à ampli différent d\'un Tuner. On ne fait rien');
+                        }
+                    } else {
+                        log::add('hdmiCec', 'debug', '  Ce n\'est pas un passage à Standby: ' . $key . '=' . $value . ' - ou c\'est un Tuner :' . $eqLogic->getLogicalId() . ' - strpos =' . strpos($eqLogic->getLogicalId(), "Tuner"));
+                    }
+                    
+                    // passe le tuner à on et l'ampli sur tuner si même adresse physique ampli et tuner
+                    log::add('hdmiCec', 'debug', '  Recherche du mot clé Tuner dans LogicalId de équipement :' . $eqLogic->getLogicalId() . ' (0=vrai): ' . strpos($eqLogic->getLogicalId(), 'Tuner'));
+                    if ((($key == 'info') and ($value == 'started to transmit') and (strpos($eqLogic->getLogicalId(), 'Tuner') !== false))) {
+                        log::add('hdmiCec', 'debug', '  Un tuner vient d etre allumé ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
+                        
+                        if ($cmd->execCmd(null, 2) != self::convertStatus('On')) {
+                            log::add('hdmiCec', 'debug', '  Tuner qui émet, on le passe à On');
+                            $cmd->event(self::convertStatus('On'));
+                            $changed = true;
+                        }
+                        
+                        if ($eqLogicAudio = eqLogic::byLogicalId('Audio', 'hdmiCec')) {
+                            if ($eqLogicAudio->getConfiguration("physicalAddress") == $eqLogic->getConfiguration("physicalAddress")) {
+                                log::add('hdmiCec', 'debug', '  ampli trouvé lié au tuner');
+                                
+                                if ($cmd = $eqLogicAudio->getCmd(null, 'status')) {
+                                    log::add('hdmiCec', 'debug', '  L\'ampli a ce status actuel = ' . $cmd->execCmd(null, 2));
+                                    if ($cmd->execCmd(null, 2) == self::convertStatus('Standby')) {
+                                        log::add('hdmiCec', 'debug', '  on le passe à On');
+                                        $cmd->event(self::convertStatus('On'));
+                                        $changed = true;
+                                    }
+                                }
+                                // passer l'input de l'ampli à Tuner !
+                                if ($cmd = $eqLogicAudio->getCmd(null, 'input')) {
+                                    if ($cmd->execCmd(null, 2) != 'Tuner') {
+                                        log::add('hdmiCec', 'debug', '  on passe entrée ampli sur Tuner');
+                                        $cmd->event('Tuner');
+                                        $changed = true;
+                                    }
+                                }
+                            } else {
+                                log::add('hdmiCec', 'debug', '  aucun ampli est lié au tuner');
+                            }
                         }
                     }
+                    
+                    // inversement passer le tuner sur standby si l'entrée choisie pour l'ampli n'est pas tuner
+                    if ((($key == 'input') and ($value != 'Tuner') and ($eqLogic->getLogicalId() == 'Audio'))) {
+                        log::add('hdmiCec', 'debug', '  Un ampli vient de passer sur une entrée différente de Tuner ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
+                        // par sécurité on vérifie que l'ampli est bien à On
+                        if ($cmd = $eqLogic->getCmd(null, 'status')) {
+                            log::add('hdmiCec', 'debug', '  L\'ampli a ce status actuel = ' . $cmd->execCmd(null, 2));
+                            if ($cmd->execCmd(null, 2) != self::convertStatus('On')) {
+                                log::add('hdmiCec', 'debug', '  on passe l\'ampli à On');
+                                $cmd->event(self::convertStatus('On'));
+                                $changed = true;
+                            }
+                        }
+                        
+                        $configuration = '"physicalAddress":"' . $eqLogic->getConfiguration("physicalAddress") . '"';
+                        $eqLogicBounds = eqLogic::byTypeAndSearhConfiguration('hdmiCec', $configuration);
+                        foreach ($eqLogicBounds as $eqLogicBound) {
+                            if ($eqLogic->getName() == $eqLogicBound->getName())
+                                continue;
+                            log::add('hdmiCec', 'debug', '  Equipement lié trouvé - nom: ' . $eqLogicBound->getName() . ' LogicalId=' . $eqLogicBound->getLogicalId());
+                            if (strpos($eqLogicBound->getLogicalId(), 'Tuner') !== false) {
+                                log::add('hdmiCec', 'debug', '  Tuner trouvé lié à ampli ' . $eqLogicBound->getName());
+                                
+                                if ($cmd = $eqLogicBound->getCmd(null, 'status')) {
+                                    log::add('hdmiCec', 'debug', '  Le tuner a ce status = ' . $cmd->execCmd(null, 2));
+                                    if ($cmd->execCmd(null, 2) != self::convertStatus('Standby')) {
+                                        log::add('hdmiCec', 'debug', '  Equipement lié passé à Standby');
+                                        $cmd->event(self::convertStatus('Standby'));
+                                        $changed = true;
+                                    }
+                                }
+                            } else {
+                                log::add('hdmiCec', 'debug', '  Equipement trouvé lié à ampli différent d\'un Tuner. On ne fait rien');
+                            }
+                        }
+                    }
+                    $eqLogic->refreshWidget();
+                } else {
+                    //pas de changement de valeur, on ne fait rien
                 }
             } else {
                 log::add('hdmiCec', 'warning', 'Cmd not found for the received frame for: ' . $eqLogic->getName() . ' - ' . $key . '=' . $value);
             }
-        }
-        
-        if ($changed) {
-            $eqLogic->refreshWidget();
         }
     }
 

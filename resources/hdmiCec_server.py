@@ -155,13 +155,13 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         global eqScanned, eqInfo, server
-        self.logger.debug('handle')
+        #self.logger.debug('start handle')
 
         data = str(self.request.recv(1024), "utf-8").split('\n')[0]
         
         lst = data.split()
         stringcount = len(lst)
-        self.logger.debug('split len->"%s"', stringcount)
+        #self.logger.debug('split len->"%s"', stringcount)
         if stringcount > 1:
             data = urllib.parse.unquote(urllib.parse.unquote(lst[1]))
         else:
@@ -170,16 +170,16 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
         self.logger.debug('recv()->"%s"', data)
         cmd = 'unkown'
         data = data.split("?")
-        self.logger.debug('after split data -> %s', data)
+        #self.logger.debug('after split data -> %s', data)
         cmd = data[0]
         #self.logger.debug('cmd -> %s', cmd)
         cmd = cmd.split("/")[1]
-        self.logger.debug('cmd -> %s', cmd)
+        #self.logger.debug('cmd -> %s', cmd)
         arg = ''
         if len(data)>1:
             arg = data[1]
         
-        self.logger.debug('arg ->%s', arg)
+        #self.logger.debug('arg ->%s', arg)
         key = ''
         value = ''
         key2 = ''
@@ -192,7 +192,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
                 key2 = options[1].rpartition('=')[0]
                 value2 = urllib.parse.unquote(options[1].rpartition('=')[2])
             
-        print('cmd=', cmd, ' arg ', arg, ' key ', key, ' value ', value, ' key2 ', key2, ' value2 ', value2)
+        print('DEBUG = cmd=', cmd, ' arg ', arg, ' key ', key, ' value ', value, ' key2 ', key2, ' value2 ', value2)
         #content_type = "text/javascript"
         #content_type = "text/html"
         #self.start_response('200 OK', content_type, data)
@@ -207,7 +207,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             data = '{'
             count = 1
             virgule = ''
-            #on remet à inconnu la liste d'équipmeent
+            #on remet à inconnu la liste d'équipement
             unscanned = {'vendor':'unscanned','physicalAddress':'unscanned','logicalAddress':'unscanned','active':'unscanned','cecVersion':'unscanned','power':'unscanned','osdName':'unscanned'}
             for key, equipment in list(eqInfo.items()):
                 eqInfo[key] = {'vendor':'unscanned','physicalAddress':'unscanned','logicalAddress':'unscanned','active':'unscanned','cecVersion':'unscanned','power':'unscanned','osdName':'unscanned'}
@@ -219,7 +219,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
                 count += 1
             data += '}'
             # data = '{"1":{"vendor":'+str(equipments[0][0])+'},"2":{"vendor":'+str(equipments[1][0])+'}}'
-            print("data =", data)
+            print("DEBUG = data =", data)
             content_type = "text/javascript"
             self.start_response('200 OK', content_type, data)
             return
@@ -582,7 +582,7 @@ class pyCecClient:
 
   # scan the bus and display devices that were found
   def ProcessCommandScan(self):
-    print("requesting CEC bus information ...")
+    print("Rrequesting CEC bus information ...")
     strLog = "CEC bus information\n===================\n"
     addresses = self.lib.GetActiveDevices()
     activeSource = self.lib.GetActiveSource()
@@ -1090,11 +1090,11 @@ class hdmiCecServer(socketserver.TCPServer):
         return
 
     def handle_request(self):
-        self.logger.debug('handle_request')
+        #self.logger.debug('handle_request')
         return socketserver.TCPServer.handle_request(self)
 
     def verify_request(self, request, client_address):
-        self.logger.debug('verify_request(%s, %s)',
+        #self.logger.debug('verify_request(%s, %s)',
                           request, client_address)
         return socketserver.TCPServer.verify_request(
             self, request, client_address,
@@ -1112,14 +1112,14 @@ class hdmiCecServer(socketserver.TCPServer):
         return socketserver.TCPServer.server_close(self)
 
     def finish_request(self, request, client_address):
-        self.logger.debug('finish_request(%s, %s)',
+        #self.logger.debug('finish_request(%s, %s)',
                           request, client_address)
         return socketserver.TCPServer.finish_request(
             self, request, client_address,
         )
 
     def close_request(self, request_address):
-        self.logger.debug('close_request(%s)', request_address)
+        #self.logger.debug('close_request(%s)', request_address)
         return socketserver.TCPServer.close_request(
             self, request_address,
         )
