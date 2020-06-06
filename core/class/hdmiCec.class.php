@@ -140,7 +140,7 @@ class hdmiCec extends eqLogic
         
         log::add('hdmiCec', 'debug', 'nom complet du daemon hdmiCec : ' . $shell);
         // TODO il faut lancer le serveur hdmi sur la machine Ip définie, pas uniquement en local
-        $cmd = 'nice -n 19 /usr/bin/python ' . $shell .' '. config::byKey('hdmiCecPort', 'hdmiCec', '0') . ' ' . config::byKey('hdmiCecOsdName', 'hdmiCec', 'Jeedom') . ' ' . config::byKey('deviceCecType', 'hdmiCec', '0') . ' ' . config::byKey('internalAddr', 'core', 'xxx.yyy.zzz.vvvv') . ' ' . config::byKey('api', 'core', 'xxxxxxxxx');
+        $cmd = 'nice -n 19 /usr/bin/python3 ' . $shell .' '. config::byKey('hdmiCecPort', 'hdmiCec', '0') . ' ' . config::byKey('hdmiCecOsdName', 'hdmiCec', 'Jeedom') . ' ' . config::byKey('deviceCecType', 'hdmiCec', '0') . ' ' . config::byKey('internalAddr', 'core', 'xxx.yyy.zzz.vvvv') . ' ' . config::byKey('api', 'hdmiCec', 'xxxxxxxxx');
         // le sudo semble poser pbm
         $result = exec('nohup sudo ' . $cmd . ' >> ' . log::getPathToLog('hdmiCec_log') . ' 2>&1 &');
         // $result='error';
@@ -1096,6 +1096,10 @@ class hdmiCecCmd extends cmd
     {
         // $b=print_r($_options,true);
         // log::add ('hdmiCec','debug','Commande reçue à exécuter : '.$this->getConfiguration('request').' de type '.$this->type.' paramètres ='.$b);
+        if (empty($this->getConfiguration('request'))) {
+            log::add('hdmiCec', 'warning', 'Echec exécution d\une commande vide');
+            return;
+        }
         $hdmiCec = $this->getEqLogic();
         $action = $this->getConfiguration('request');
         switch ($action) {
@@ -1169,7 +1173,11 @@ class hdmiCecCmd extends cmd
             @$file = file_get_contents('http://' . config::byKey('hdmiCecIp', 'hdmiCec', '0') . ':' . config::byKey('hdmiCecPort', 'hdmiCec', '0') . '/' . rawurlencode($action) . '?address=' . rawurlencode($hdmiCec->getLogicalId()), false, $context);
         }
         
-        log::add('hdmiCec', 'debug', 'Execution de la commande  terminée ');
+        if ($file === False) {
+            log::add('hdmiCec', 'warning', 'Echec exécution de la commande  ' . $this->getConfiguration('request') );
+        } else {
+            log::add('hdmiCec', 'debug', 'Exécution de la commande  ' . $this->getConfiguration('request') . ' terminée '. $file);
+        }
     }
 
 /**

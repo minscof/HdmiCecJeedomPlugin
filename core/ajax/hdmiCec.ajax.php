@@ -67,8 +67,11 @@ try {
     if (init('action') == 'modelList') {
         $json = array();
         $id_periph = init('id_periph');
-        
-        $handle = fopen("../../resources/" . $id_periph . ".txt", "r");
+        if (! empty($id_periph)) {
+            $handle = fopen("../../resources/" . $id_periph . ".txt", "r");
+        } else {
+            $handle = False;
+        }
         if ($handle) {
             while (($buffer = fgets($handle, 4096)) !== false) {
                 $buffer = rtrim($buffer);

@@ -1,7 +1,7 @@
 {
 	"id":"hdmiCec",
 	"name":"HDMI contrôle (CEC)",
-	"description":"test",
+	"description":"Gestion des équipements audio video via une connexion hdmi supportant le protocole CEC",
 	"icon":"icon animal-sheep1",
 	"licence":"AGPL",
 	"author":"Minscof",
@@ -9,6 +9,8 @@
 	"require":"2.0.1",
 	"category":"multimedia",
 	"hasDependency":true,
-	"hasOwnDeamon": true,
-	"version":"0.1.1"
+	"maxDependencyInstallTime":200,
+	"hasOwnDeamon":true,
+	"compatibility":"python3",
+	"version":"0.9.2"
 }
