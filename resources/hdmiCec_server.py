@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # runserver_socketio.py
 # parameter
@@ -7,19 +7,21 @@
 # 3 : cecdevicetype for CEC channel
 # 4 : ip adress of remote jeedom
 # 5 : api key of remote jeedom
-from gevent import monkey
-from socketio.server import SocketIOServer
 import os
+import logging
 import sys
+import socketserver
 import cec
 from time import time, localtime, strftime, sleep
-import urllib2,urllib
+import urllib.request, urllib.error, urllib.parse
 # compatibility with python 2.x , for 3.x rplace urllib2 by urllib request
 import regex
-import exceptions
-import threading 
+#import exceptions
+import threading
 
-__version__='0.9'
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)-15s - %(name)s: %(message)s')
+
+__version__='0.96'
 #print(cec)
 
 cecList = ["TV","Recorder 1","Recorder 2","Tuner 1","Playback 1","Audio","Tuner 2","Tuner 3","Playback 2","Recorder 3","Tuner 4","Playback 3","Reserved 1","Reserved 2","Free use","Broadcast"]
@@ -47,13 +49,14 @@ for key in cecList:
 
 eqScanned = []
 
-#monkey.patch_all()
-monkey.patch_all(thread=False)
+server = ''
 
 if len(sys.argv) > 1:
     PORT = int(sys.argv[1])
+    HOST, PORT = "localhost", int(sys.argv[1])
 else:
     PORT = 6000
+    HOST, PORT = "localhost", 6000
 
 # jeedomSystem=${2}
 if len(sys.argv) > 2:
@@ -71,7 +74,7 @@ else:
 if len(sys.argv) > 4:
     jeedomIP = sys.argv[4]
 else:
-    jeedomIP = "192.168.0.9"
+    jeedomIP = "localhost"
 
 # jeedomApiKey=${5}
 if len(sys.argv) > 5:
@@ -84,13 +87,12 @@ jeedomCmd = "http://" + jeedomIP + "/core/api/jeeApi.php?apikey=" + jeedomApiKey
 
 
 time_start = time()
-print 'Server started at ', strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time_start)), 'listening on port ', PORT  
-
+print('Server started at ', strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time_start)), 'listening on port ', PORT)  
 
 
 def polling(self, unstr):
     global cecList 
-    print unstr, time()
+    print(unstr, time())
         
     for equipment in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e']:
         if self.pyCecClient.GetLogicalAddressAdapter() == equipment:
@@ -104,42 +106,80 @@ def polling(self, unstr):
         else:
             #print "Debug sendCommand NOk"
             value = '{"logicalAddress":"' + cecList[int(equipment,16)] + '","status":"Off"}'
-            print "EVENT to notify send command", jeedomCmd + value
-            urllib2.urlopen(jeedomCmd + urllib.quote(value)).read()
-        
+            print("EVENT to notify send command", jeedomCmd + value)
+            urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
 
-    
-class jeedomHandler(object):
-    def __init__(self):
+
+class jeedomRequestHandler(socketserver.BaseRequestHandler):
+    def __init__(self, request, client_address, server):
         # initialization.
+        self.logger = logging.getLogger('jeedomRequestHandler')
         self.pyCecClient = lib
         self.polling = MyTimer(5.0, polling, [self,"polling Cec"])
+        socketserver.BaseRequestHandler.__init__(self, request,
+                                                 client_address,
+                                                 server)
+
+    def start_response(self, code, contentType, data):
+        log = logging.getLogger('start_reponse')
+        log.debug('reponse code = %s data = %s', code, data)
+        code = "HTTP/1.1 " + code + '\r\n'
+        self.request.send(code.encode())
+        response_headers = {
+            'Content-Type': contentType +'; encoding=utf8',
+            'Content-Length': len(data),
+            'Connection': 'close',
+        }
+        response_headers_raw = ''.join('%s: %s\n' % (k, v) for k, v in response_headers.items())
+        self.request.send(response_headers_raw.encode())
+        self.request.send(b'\n')
+        self.request.send(data.encode())
+        return
         
-        #print "affiche" 
-        
-    def sendCommand(self,dest,cmd,data,start_response):
+    def sendCommand(self, dest, cmd, data):
         global eqInfo, cecList
-        print "Debug sendCommand start"
+        print("Debug sendCommand start")
         if self.pyCecClient.ProcessCommandTx(data):
-            print "Debug sendCommand Ok"
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>'+cmd+' command done.</h1>']
+            print("Debug sendCommand Ok")
+            self.start_response('200 OK', "text/html", '<h1>'+cmd+' command done.</h1>' )
         else:
-            print "Debug sendCommand NOk"
+            print("Debug sendCommand NOk")
             value = '{"logicalAddress":"' + self.pyCecClient.lib.LogicalAddressToString(dest) + '","status":"Off"}'
-            print "EVENT to notify send command", jeedomCmd + value
-            urllib2.urlopen(jeedomCmd + urllib.quote(value)).read()
+            print("EVENT to notify send command", jeedomCmd + value)
+            urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
             indice=cecList[dest]
             eqInfo[indice]["logicalAddress"]=indice
             eqInfo[indice]["power"]="Off"    
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>device off command '+cmd+' failed.</h1>']
+            self.start_response('200 OK', "text/html", '<h1>device off command '+cmd+' failed.</h1>')
+        return
+
+    def handle(self):
+        global eqScanned, eqInfo, server
+        self.logger.debug('handle')
+
+        data = str(self.request.recv(1024), "utf-8").split('\n')[0]
         
-    def __call__(self, environ, start_response):
-        global eqScanned, eqInfo
-        cmd = environ['PATH_INFO'].strip('/')
+        lst = data.split()
+        stringcount = len(lst)
+        self.logger.debug('split len->"%s"', stringcount)
+        if stringcount > 1:
+            data = urllib.parse.unquote(urllib.parse.unquote(lst[1]))
+        else:
+            data = urllib.parse.unquote(urllib.parse.unquote(lst[1]))
         
-        arg = urllib2.unquote(environ['QUERY_STRING'])
+        self.logger.debug('recv()->"%s"', data)
+        cmd = 'unkown'
+        data = data.split("?")
+        self.logger.debug('after split data -> %s', data)
+        cmd = data[0]
+        #self.logger.debug('cmd -> %s', cmd)
+        cmd = cmd.split("/")[1]
+        self.logger.debug('cmd -> %s', cmd)
+        arg = ''
+        if len(data)>1:
+            arg = data[1]
+        
+        self.logger.debug('arg ->%s', arg)
         key = ''
         value = ''
         key2 = ''
@@ -147,18 +187,20 @@ class jeedomHandler(object):
         if arg:
             options = arg.split('&') 
             key = options[0].rpartition('=')[0]
-            value = urllib2.unquote(options[0].rpartition('=')[2])
+            value = urllib.parse.unquote(options[0].rpartition('=')[2])
             if len(options) == 2:
                 key2 = options[1].rpartition('=')[0]
-                value2 = urllib2.unquote(options[1].rpartition('=')[2])
+                value2 = urllib.parse.unquote(options[1].rpartition('=')[2])
             
-        print 'cmd=', cmd, ' arg ', arg, ' key ', key, ' value ', value, ' key2 ', key2, ' value2 ', value2
-        content_type = "text/javascript"
+        print('cmd=', cmd, ' arg ', arg, ' key ', key, ' value ', value, ' key2 ', key2, ' value2 ', value2)
+        #content_type = "text/javascript"
         content_type = "text/html"
+        self.start_response('200 OK', content_type, data)
 
         if not cmd:
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>Welcome. Try a command ex : scan, stop, start.</h1>']
+            content_type = "text/html"
+            self.start_response('200 OK', content_type, '<h1>Welcome. Try a command ex : scan, stop, start.</h1>')
+            return
             
         if cmd == 'scan':
             eqScanned = self.pyCecClient.ProcessCommandScan()
@@ -167,7 +209,7 @@ class jeedomHandler(object):
             virgule = ''
             #on remet à inconnu la liste d'équipmeent
             unscanned = {'vendor':'unscanned','physicalAddress':'unscanned','logicalAddress':'unscanned','active':'unscanned','cecVersion':'unscanned','power':'unscanned','osdName':'unscanned'}
-            for key, equipment in eqInfo.items():
+            for key, equipment in list(eqInfo.items()):
                 eqInfo[key] = {'vendor':'unscanned','physicalAddress':'unscanned','logicalAddress':'unscanned','active':'unscanned','cecVersion':'unscanned','power':'unscanned','osdName':'unscanned'}
             for equipment in eqScanned:
                 eqInfo[str(equipment[2])] = {'vendor':str(equipment[0]),'physicalAddress':str(equipment[1]),'logicalAddress':str(equipment[2]),'active':str(equipment[3]),'cecVersion':str(equipment[4]),'power':str(equipment[5]),'osdName':str(equipment[6])}
@@ -177,44 +219,41 @@ class jeedomHandler(object):
                 count += 1
             data += '}'
             # data = '{"1":{"vendor":'+str(equipments[0][0])+'},"2":{"vendor":'+str(equipments[1][0])+'}}'
-            print "data =", data
+            print("data =", data)
             content_type = "text/javascript"
-            start_response('200 OK', [('Content-Type', content_type)])
-            return [data]
-        
+            self.start_response('200 OK', content_type, data)
+            return
         
         if cmd == 'dump':
-            print "********** Dump - equipments :  All  **********"
+            print("********** Dump - equipments :  All  **********")
             #print 'eqInfo=', eqInfo
             #equiment is dictionnary
-            for key, equipment in eqInfo.items():
+            for key, equipment in list(eqInfo.items()):
                 #print "vendor:" + str(equipment["vendor"])
                 if str(equipment["logicalAddress"]) == 'unscanned':
-                    print "equipment:", key, ' unscanned'
+                    print("equipment:", key, ' unscanned')
                 else:
-                    print "equipment:" + str(equipment["logicalAddress"]) + " power:" + str(equipment["power"]) + " physicalAddress:" + str(equipment["physicalAddress"]) + " active:" + str(equipment["active"]) + " cecVersion:" + str(equipment["cecVersion"]) + " vendor:" + str(equipment["vendor"]) + " osdName:" + str(equipment["osdName"])
+                    print("equipment:" + str(equipment["logicalAddress"]) + " power:" + str(equipment["power"]) + " physicalAddress:" + str(equipment["physicalAddress"]) + " active:" + str(equipment["active"]) + " cecVersion:" + str(equipment["cecVersion"]) + " vendor:" + str(equipment["vendor"]) + " osdName:" + str(equipment["osdName"]))
             
-            print "********** Dump - equipments : scanned **********"
+            print("********** Dump - equipments : scanned **********")
             #equipment is list ?
             for equipment in eqScanned:
-                print "logicalAddress:" + str(equipment[2]) + " power:" + str(equipment[5]) + " physicalAddress:" + str(equipment[1]) + " active:" + str(equipment[3]) + " cecVersion:" + str(equipment[4]) + " vendor:" + str(equipment[0]) + " osdName:" + str(equipment[6])
-            
+                print("logicalAddress:" + str(equipment[2]) + " power:" + str(equipment[5]) + " physicalAddress:" + str(equipment[1]) + " active:" + str(equipment[3]) + " cecVersion:" + str(equipment[4]) + " vendor:" + str(equipment[0]) + " osdName:" + str(equipment[6]))
             
             content_type = "text/javascript"
-            start_response('200 OK', [('Content-Type', content_type)])
-            data = '{"result":"ok"}'
-            return [data]
+            self.start_response('200 OK', content_type, '{"result":"ok"}')
+            return
         
         #message ID : 72 - Turns the System Audio Mode On or Off (Directly addressed or Broadcast)
         if cmd == 'on':
-            print "Debug Command on : start"
+            print("Debug Command on : start")
             #trouver le numéro de l'équipement entre 0 et 15
             dest = cecList.index(value)
             #if (dest == 0):
             #    data = "10:04"
             prefix = self.pyCecClient.GetLogicalAddressAdapter()+hex(dest)[2:]
             
-            print "Debug Command on : prefix=", prefix
+            print("Debug Command on : prefix=", prefix)
             #initialize default value ! 
             data = prefix+":00"
             
@@ -230,27 +269,22 @@ class jeedomHandler(object):
             if (dest in [cecList.index('Audio')]):
                 #data=prefix+":72:01"
                 data=prefix+":44:6d"
-                print "Debug Command on : Audio=", data
+                print("Debug Command on : Audio=", data)
              #dvd
             if (dest in [cecList.index('Playback 1'),cecList.index('Playback 2'),cecList.index('Playback 3')]):
                 data=prefix+":72:01"    
              #dvd
             if (dest in [cecList.index('Recorder 1'),cecList.index('Recorder 2'),cecList.index('Recorder 3')]):
                 data=prefix+":72:01"    
+            self.sendCommand(dest,cmd,data)
+            return
             
-                
-            self.sendCommand(dest,cmd,data,start_response)
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>On command done.</h1>']
-            
-        
         if cmd == 'off':
             #trouver le numéro de l'équipement entre 0 et 15
             dest = cecList.index(value)
             data = self.pyCecClient.GetLogicalAddressAdapter()+hex(dest)[2:]+":36"
-            self.sendCommand(dest,cmd,data,start_response)
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>Off command done.</h1>']
+            self.sendCommand(dest,cmd,data)
+            return
             
         if cmd == 'setInput':
             #trouver le numéro de l'équipement entre 0 et 15
@@ -279,22 +313,21 @@ class jeedomHandler(object):
                 input = '83'
                 
             data = orig+hex(dest)[2:]+":82:"+input+":01"
-            self.sendCommand(dest,cmd,data,start_response)
-            start_response('200 OK', [('Content-Type', 'text/html')])
+            self.sendCommand(dest,cmd,data)
+            #start_response('200 OK', [('Content-Type', 'text/html')])
             #TODO send feedback to update TV status
             value = '{"logicalAddress":"' + self.pyCecClient.lib.LogicalAddressToString(0) + '","input":"'+value2+'"}'
-            print "EVENT to notify send command", jeedomCmd + value
-            urllib2.urlopen(jeedomCmd + urllib.quote(value)).read()
-            return ['<h1>set Input command done.</h1>']
-
+            print("EVENT to notify send command", jeedomCmd + value)
+            urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
+            return
+           
         if cmd == 'osd':
             #la commande osd concerne toujour la TV
             dest = cecList.index('TV')
             #Hello world = 48:65:6C:6C:6F:20:77:6F:72:6C:64
             data = self.pyCecClient.GetLogicalAddressAdapter()+hex(dest)[2:]+":64:00:48:65:6C:6C:6F:20:77:6F:72:6C:64"
-            self.sendCommand(dest,cmd,data,start_response)
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>display Osd command done.</h1>']
+            self.sendCommand(dest,cmd,data)
+            return
             
         if cmd == 'transmit':
             #trouver le numéro de l'équipement entre 0 et 15 
@@ -302,32 +335,30 @@ class jeedomHandler(object):
             dest = cecList.index(value)
             #Hello world = 48:65:6C:6C:6F:20:77:6F:72:6C:64
             data = self.pyCecClient.GetLogicalAddressAdapter()+hex(dest)[2:]+":"+value2
-            self.sendCommand(dest,cmd,data,start_response)
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>Transmit command done.</h1>']
+            self.sendCommand(dest,cmd,data)
+            return
             
         if cmd == 'startPolling':
             self.polling.start()
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>start Polling command done.</h1>']
+            self.start_response('200 OK', 'text/html', '<h1>start Polling command done.</h1>')
+            return
         
         if cmd == 'stopPolling':
             if self.polling != '':
                 self.polling.stop()
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>stop Polling command done.</h1>']
-            
+            self.start_response('200 OK', 'text/html', '<h1>stop Polling command done.</h1>')
+            return
 
         if cmd == 'test':
             if not value:
                 value = ">> 01:90:00"
             value = self.pyCecClient.AnalyzeCommand(value)
             if value:
-                print "EVENT to notify send command", jeedomCmd + value  
-                a = urllib2.urlopen(jeedomCmd + urllib.quote(value)).read()
-            start_response('200 OK', [('Content-Type', 'text/html')])
-            return ['<h1>Test command done.</h1>']
-
+                print("EVENT to notify send command", jeedomCmd + value)  
+                a = urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
+                self.start_response('200 OK', 'text/html', '<h1>Test command done.</h1>')
+                return
+            
             '''
 Executing the above commands goes as follows.
 
@@ -387,26 +418,28 @@ http://raspberry-at-home.com/control-rpi-with-tv-remote/
 
 
 '''
-            
+        self.logger.debug('Cmd = ->%s', cmd)    
         if cmd.startswith('stop') or cmd == 'stop':
-            print 'arrêt du serveur demandé'
-            return end_daemon(start_response)
+            print('stop server requested')
+            #todo close socket
+            server.server_close()
+            return self.end_daemon()
             sys.exit()
             # return end_daemon(start_response)
 
-        print "Command not recognized :", cmd
-        
-        return not_found(start_response)
+        print("Command not recognized :", cmd)
+        self.logger.debug('Command not recognized ->%s', cmd)
+        return self.not_found()
 
 
-def not_found(start_response):
-    print "Debug not-found..."
-    start_response('404 Not Found', [])
-    return ['<h1>Not Found</h1>']
-
-def end_daemon(start_response):
-    start_response('200 Ok', [])
-    return ['<h1>End daemon</h1>']
+    def not_found(self):
+        print("Debug not-found...")
+        self.start_response('404 Not Found', 'text/html', '<h1>Not Found</h1>')
+        return
+    
+    def end_daemon(self):
+        self.start_response('200 Ok', 'text/html', '<h1>End daemon</h1>')
+        return
 
 
 class pyCecClient:
@@ -416,13 +449,18 @@ class pyCecClient:
   log_level = cec.CEC_LOG_TRAFFIC
   
   logicalAddressAdapter = ''
-  physicalAddressAdapter = ''
+  physicalAddressAdapter = ''  
+
+  def __init__(self):
+    self.logger = logging.getLogger('pyCecClient')
+    self.logger.debug('init pyCecClient start')
+    self.SetConfiguration()
   
   def SetAddressAdapter(self,logicalAddress,physicalAddress):
       global logicalAddressAdapter, physicalAddressAdapter
       logicalAddressAdapter=hex(logicalAddress)[2:]
       physicalAddressAdapter=hex(physicalAddress).rstrip('L')
-      print 'physicaladdress=', physicalAddress, ' and :'+physicalAddressAdapter
+      print('physicaladdress=', physicalAddress, ' and :'+physicalAddressAdapter)
       
   def GetLogicalAddressAdapter(self):
       global logicalAddressAdapter
@@ -453,7 +491,7 @@ class pyCecClient:
 
   # create a new libcec_configuration
   def SetConfiguration(self):
-    print 'jeedomsystem=', jeedomSystem
+    print('jeedomsystem=', jeedomSystem)
     self.cecconfig.strDeviceName = jeedomSystem
     self.cecconfig.bActivateSource = 0
     self.cecconfig.deviceTypes.Add(self.GetDeviceType())
@@ -482,17 +520,18 @@ class pyCecClient:
     adapters = self.lib.DetectAdapters()
     for adapter in adapters:
       print("found a CEC adapter:")
-      print("port:     " + adapter.strComName)
-      print("vendor:   " + hex(adapter.iVendorId))
-      print("product:  " + hex(adapter.iProductId))
+      print(("port:     " + adapter.strComName))
+      print(("vendor:   " + hex(adapter.iVendorId)))
+      print(("product:  " + hex(adapter.iProductId)))
       retval = adapter.strComName
     return retval
 
   # initialise libCEC
   def InitLibCec(self):
+    self.logger.debug('init InitLibCec starting...')
     self.lib = cec.ICECAdapter.Create(self.cecconfig)
     # print libCEC version and compilation information
-    print("libCEC version " + self.lib.VersionToString(self.cecconfig.serverVersion) + " loaded: " + self.lib.GetLibInfo())
+    print(("libCEC version " + self.lib.VersionToString(self.cecconfig.serverVersion) + " loaded: " + self.lib.GetLibInfo()))
 
     # search for adapters
     adapter = self.DetectAdapter()
@@ -533,7 +572,7 @@ class pyCecClient:
   # send a custom command
   def ProcessCommandTx(self, data):
     cmd = self.lib.CommandFromString(data)
-    print("transmit " + data)
+    print(("transmit " + data))
     if self.lib.Transmit(cmd):
       print("command sent")
       return 1
@@ -572,38 +611,59 @@ class pyCecClient:
 
   # main loop, ask for commands
   def MainLoop(self):
-    global eqInfo, eqScanned, cecList, cecKey
-    print 'Listening on http://127.0.0.1:%s and on port 10843 (flash policy server)' % PORT
+    global eqInfo, eqScanned, cecList, cecKey, server
+    self.logger.debug('init MainLoop starting, scan...')
     eqScanned = self.ProcessCommandScan()
-    print 'osdname to look for =',self.cecconfig.strDeviceName
+    self.logger.debug('initial scan finished')
+    print('osdname to look for =',self.cecconfig.strDeviceName)
     for equipment in eqScanned:
         eqInfo[str(equipment[2])] = {'vendor':str(equipment[0]),'physicalAddress':str(equipment[1]),'logicalAddress':str(equipment[2]),'active':str(equipment[3]),'cecVersion':str(equipment[4]),'power':str(equipment[5]),'osdName':str(equipment[6])}
-        print 'scanned :', equipment[2], ' name=',equipment[6]
+        print('scanned :', equipment[2], ' name=',equipment[6])
         if equipment[6] == self.cecconfig.strDeviceName:
             self.SetAddressAdapter(cecList.index(equipment[2]),equipment[1])
-            print 'logicalAddress of adapter:', self.GetLogicalAddressAdapter()
+            print('logicalAddress of adapter:', self.GetLogicalAddressAdapter())
     
     #send commande to signal this device is on before entering the main loop
     value = self.AnalyzeCommand("<< "+self.GetLogicalAddressAdapter()+"f:84:"+self.GetPhysicalAddressAdapter('xx:xx')+":01")
     #value = '{"logicalAddress":"Tuner1","status":"On"}'
-    print "EVENT to notify send command", jeedomCmd + value
-    urllib2.urlopen(jeedomCmd + urllib.quote(value)).read()
+    print("EVENT to notify send command", jeedomCmd + value)
+    self.logger.debug('notify jeedom with command %s', jeedomCmd + value)
+    urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
     indice=cecList[int(self.GetLogicalAddressAdapter(),16)]
     eqInfo[indice]["logicalAddress"]=indice
     eqInfo[indice]["power"]="On"
+     
+    address = (HOST, PORT) 
+    server = hdmiCecServer(address, jeedomRequestHandler)
+    ip, port = server.server_address  # what port was assigned?
     
+    self.logger.info('Server on %s:%s', ip, port)
+    server.serve_forever()
+    self.logger.info('Server ended')
+
+    # Start the server in a thread
+    '''
+    t = threading.Thread(target=server.serve_forever)
+    t.setDaemon(True)  # don't hang on exit
+    t.start()
+    print('Server loop running in thread:', t.getName())
+    '''
+    '''
     try:
-        SocketIOServer(('', PORT), jeedomHandler(), resource="socket.io").serve_forever()
+        print('Listening on http://127.0.0.1:%s and on port 10843 (flash policy server)' % PORT)
+        print('Host=', HOST)
+        socketserver.TCPServer((HOST, PORT), jeedomHandler).serve_forever()
+        # SocketIOServer(('', PORT), jeedomHandler(), resource="socket.io").serve_forever()
     except (KeyboardInterrupt, SystemExit):
-        print 'interception signal'
+        print('interception signal')
         sys.exit(0)
-    
-    print 'before entering mainloop keyboard'
+    '''
+    print('before entering mainloop keyboard')
     runLoop = True
     
 
     while runLoop:
-      command = raw_input("Enter command:").lower()
+      command = input("Enter command:").lower()
       if command == 'q' or command == 'quit':
         runLoop = False
       elif command == 'self':
@@ -634,7 +694,7 @@ class pyCecClient:
     try:   
         matchObj = regex.match('^>> ([0-9a-f])([0-9a-f]):90:([0-9a-f]{2})', command)
     except Exception:
-        print "une erreur s est produite"
+        print("une erreur s est produite")
     if matchObj:
         if matchObj.group(3) in ['00','02']:
             status = "On"
@@ -643,7 +703,7 @@ class pyCecClient:
         try:     
             value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","status":"' + status + '"}'
         except Exception:
-            print 'fjghhhhhhhhhhhhhhh'
+            print('fjghhhhhhhhhhhhhhh')
             
         #eqInfo[str(equipment[2])] = {'vendor':str(equipment[0]),'physicalAddress':str(equipment[1]),'logicalAddress':str(equipment[2]),'active':str(equipment[3]),'cecVersion':str(equipment[4]),'power':str(equipment[5]),'osdName':str(equipment[6])}
         indice=cecList[int(matchObj.group(1),16)]
@@ -694,9 +754,9 @@ class pyCecClient:
         #5f:84:10:00:05 or 
         data = self.GetLogicalAddressAdapter()+matchObj.group(1)+':8f'
         if self.ProcessCommandTx(data):
-            print "msg 8f sent to check if device is On or Standby"
+            print("msg 8f sent to check if device is On or Standby")
         else:
-            print "Warning : error sending msg 8f to check if device is On or Standby"
+            print("Warning : error sending msg 8f to check if device is On or Standby")
         #value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Alive"}'
         return value
     
@@ -720,9 +780,9 @@ class pyCecClient:
     # 5f:85      
     matchObj = regex.match('^>> ([0-9a-f])f:85', command)
     if matchObj:
-        print "debug adr =", matchObj.group(1), ' name=', self.lib.LogicalAddressToString(int(matchObj.group(1),16)) 
+        print("debug adr =", matchObj.group(1), ' name=', self.lib.LogicalAddressToString(int(matchObj.group(1),16))) 
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Alive"}'
-        print "value", value
+        print("value", value)
         return value
     #print "7"
     # command 80 : 
@@ -790,7 +850,7 @@ class pyCecClient:
     matchObj = regex.match('^>> ([0-9a-f]{2}):a0:(([0-9a-f]{2}:){3})(.*)', command)
     if matchObj:
         vendor=self.lib.VendorIdToString(int(matchObj.group(2).replace(":", ""),16))
-        print 'Special vendor command from ', vendor, ' = ', matchObj.group(4)
+        print('Special vendor command from ', vendor, ' = ', matchObj.group(4))
         if  matchObj.group(4) == '00:09:00:01':
             value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(0) + '","status":"Standby"}'
             indice=cecList[0]
@@ -857,7 +917,7 @@ class pyCecClient:
     matchObj = regex.match('^>> ([0-9a-e])([0-9a-e]):([0-9a-f]{2}):([0-9a-f]{2})(.*)', command)
     if matchObj:
         msgID =  matchObj.group(3)
-        print "direct message between equipement", msgID
+        print("direct message between equipement", msgID)
         if msgID == "00":
             #command 00message ID : 00 - Used as a response to indicate that the device does not support the requested message type, or that it cannot execute it at the present time (Directly addressed)
             #notify dest who can t execute the cmd to signal that dest is at least standby
@@ -878,7 +938,7 @@ class pyCecClient:
                 status = 'Standby'
             #message ID : 7E - Reports the current status of the System Audio Mode (Directly addressed)
             #notify dest who can t execute the cmd to signal that dest is at least standby
-            print "Audio system mode is ",status
+            print("Audio system mode is ",status)
             value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","status":"'+ status +'"}'
             indice=cecList[int(matchObj.group(1),16)]
             eqInfo[indice]["logicalAddress"]=indice
@@ -890,7 +950,7 @@ class pyCecClient:
     matchObj = regex.match('^>> ([0-9a-e])([0-9a-e]):([0-9a-f]{2})', command)
     if matchObj:
         msgID =  matchObj.group(3)
-        print "direct message between equipement", msgID
+        print("direct message between equipement", msgID)
         if msgID == "46":
             #message ID : 46 - Used to request the preferred OSD name of a device for use in menus associated with that device (Directly addressed)
             value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Request osdName to '+self.lib.LogicalAddressToString(int(matchObj.group(2),16))+'"}'
@@ -907,9 +967,6 @@ class pyCecClient:
             #value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(2))) + '","info":"Request '+ matchObj.group(4) +' to '+self.lib.LogicalAddressToString(int(matchObj.group(1)))+' cannot be executed"}'
             return value
         
-        
-        
-        
     
     #print "16"
     #message ID : 32 - Used by a TV or another device to indicate the menu language (Broadcast)
@@ -923,7 +980,7 @@ class pyCecClient:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","language":"'+country+ '"}'
         return value
     
-    print 'Command to analyze', command
+    print('Command to analyze', command)
     return 0
 
 
@@ -944,35 +1001,32 @@ class pyCecClient:
       levelstr = "DEBUG:   "
       
     time = time_start + time / 1000
-    print(levelstr + "[" + strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time)) + "]     " + message)
+    print((levelstr + "[" + strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time)) + "]     " + message))
     return 0
 
   # key press callback
   def KeyPressCallback(self, key, duration):
-    print("[key pressed] " + str(key))
+    print(("[key pressed] " + str(key)))
     return 0
 
 # command callback
   def CommandCallback(self, command):
-    print("[command] " + command)
+    print(("[command] " + command))
     value = self.AnalyzeCommand(command)
     if value:
-      print "EVENT to notify send command", jeedomCmd + value  
-      urllib2.urlopen(jeedomCmd + urllib.quote(value)).read()
+      print("EVENT to notify send command", jeedomCmd + value)  
+      urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
     return 0
 
 # menu state callback
   def MenuStateCallback(self, state):
-    print("[menu state] " + str(state))
+    print(("[menu state] " + str(state)))
     return 0
 
 # source activated callback
   def SourceActivatedCallback(self, logicalAddress, activated):
-    print("[source activated] " + str(logicalAddress) + " activated=" + str(activated))
+    print(("[source activated] " + str(logicalAddress) + " activated=" + str(activated)))
     return 0
-
-  def __init__(self):
-    self.SetConfiguration()
 
 # logging callback
 def log_callback(level, time, message):
@@ -1014,12 +1068,69 @@ class MyTimer:
     def stop(self): 
         self._timer.cancel() 
   
+class hdmiCecServer(socketserver.TCPServer):
+    def __init__(self, server_address, handler_class=jeedomRequestHandler):
+        self.logger = logging.getLogger('hdmiCecServer')
+        self.logger.debug('__init__')
+        socketserver.TCPServer.__init__(self, server_address, handler_class)
+        return
 
+    def server_activate(self):
+        self.logger.debug('server_activate')
+        socketserver.TCPServer.server_activate(self)
+        return
+
+    def serve_forever(self, poll_interval=0.5):
+        self.logger.debug('waiting for request')
+        self.logger.info(
+            'Handling requests, press <Ctrl-C> to quit'
+        )
+        socketserver.TCPServer.serve_forever(self, poll_interval)
+        return
+
+    def handle_request(self):
+        self.logger.debug('handle_request')
+        return socketserver.TCPServer.handle_request(self)
+
+    def verify_request(self, request, client_address):
+        self.logger.debug('verify_request(%s, %s)',
+                          request, client_address)
+        return socketserver.TCPServer.verify_request(
+            self, request, client_address,
+        )
+
+    def process_request(self, request, client_address):
+        self.logger.debug('process_request(%s, %s)',
+                          request, client_address)
+        return socketserver.TCPServer.process_request(
+            self, request, client_address,
+        )
+
+    def server_close(self):
+        self.logger.debug('server_close')
+        return socketserver.TCPServer.server_close(self)
+
+    def finish_request(self, request, client_address):
+        self.logger.debug('finish_request(%s, %s)',
+                          request, client_address)
+        return socketserver.TCPServer.finish_request(
+            self, request, client_address,
+        )
+
+    def close_request(self, request_address):
+        self.logger.debug('close_request(%s)', request_address)
+        return socketserver.TCPServer.close_request(
+            self, request_address,
+        )
+
+    def shutdown(self):
+        self.logger.debug('shutdown()')
+        return socketserver.TCPServer.shutdown(self)
 
 
 if __name__ == '__main__':
-    
-    
+    logger = logging.getLogger('hdmiCec_server')
+    logger.info('starting...')
     
     # initialise libCEC
     lib = pyCecClient()
@@ -1030,3 +1141,4 @@ if __name__ == '__main__':
     lib.SetSourceActivatedCallback(source_activated_callback)
     # initialise libCEC and enter the main loop
     lib.InitLibCec()
+    logger.info('end.')
