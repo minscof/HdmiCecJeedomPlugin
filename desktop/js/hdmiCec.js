@@ -100,7 +100,7 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').on('change',functi
 	if (!$(this).value()) return;
 	// alert('onchange model='+$(this).value());
 	if ($(this).value()){
-		$('#img_hdmiCecModel').attr('src','plugins/hdmiCec/core/template/images/'+$(this).value()+'.jpg');
+		$('#img_hdmiCecModel').attr('src','plugins/hdmiCec/core/template/images/'+$(this).value()+'.png');
 	}
 });
 
@@ -142,7 +142,7 @@ $('.eqLogicAttr[data-l1keyOLP=configuration][data-l2key=periphTypeOLD]').on('cha
                 
                 if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').value()) {
                 	//alert('image='+$('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').value())
-                	$('#img_hdmiCecModel').attr('src','plugins/hdmiCec/core/template/images/'+$('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').value()+'.jpg');
+                	$('#img_hdmiCecModel').attr('src','plugins/hdmiCec/core/template/images/'+$('.eqLogicAttr[data-l1key=configuration][data-l2key=model]').value()+'.png');
                 }
                 test2();
             }

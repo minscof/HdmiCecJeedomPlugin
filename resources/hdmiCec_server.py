@@ -194,8 +194,8 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             
         print('cmd=', cmd, ' arg ', arg, ' key ', key, ' value ', value, ' key2 ', key2, ' value2 ', value2)
         #content_type = "text/javascript"
-        content_type = "text/html"
-        self.start_response('200 OK', content_type, data)
+        #content_type = "text/html"
+        #self.start_response('200 OK', content_type, data)
 
         if not cmd:
             content_type = "text/html"
@@ -1072,6 +1072,7 @@ class hdmiCecServer(socketserver.TCPServer):
     def __init__(self, server_address, handler_class=jeedomRequestHandler):
         self.logger = logging.getLogger('hdmiCecServer')
         self.logger.debug('__init__')
+        socketserver.TCPServer.allow_reuse_address = True
         socketserver.TCPServer.__init__(self, server_address, handler_class)
         return
 

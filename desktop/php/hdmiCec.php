@@ -43,7 +43,7 @@ $eqLogics = eqLogic::byType('hdmiCec');
             }
             echo '<div class="eqLogicDisplayCard cursor" data-eqLogic_id="' . $eqLogic->getId() . '" style="background-color : #ffffff; height : 200px;margin-bottom : 10px;padding : 5px;border-radius: 2px;width : 160px;margin-left : 10px;' . $opacity . '" >';
             echo "<center>";
-            $file = "plugins/hdmiCec/core/template/images/" . $eqLogic->getConfiguration('model') . ".jpg";
+            $file = "plugins/hdmiCec/core/template/images/" . $eqLogic->getConfiguration('model') . ".png";
             if (file_exists($file)) {
                 $path = $file;
             } else {

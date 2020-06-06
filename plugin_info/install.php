@@ -19,8 +19,9 @@
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
 function hdmiCec_install() {
-    exec('sudo apt-get install python-pip libevent-dev python-all-dev ');
-	exec('sudo apt-get install libcec-dev');
+    exec('sudo apt-get -y install cmake libudev-dev libxrandr-dev python3-dev swig');
+    exec('sudo apt-get -y install python-pip libevent-dev python-all-dev ');
+	exec('sudo apt-get -y install libcec-dev');
     exec('sudo pip install greenlet');
     exec('sudo pip install gevent');
     exec('sudo pip install gevent-socketio');
@@ -30,8 +31,8 @@ function hdmiCec_install() {
 }
 
 function hdmiCec_update() {
-    exec('sudo apt-get install python-pip libevent-dev python-all-dev ');
-	exec('sudo apt-get install libcec-dev');
+    exec('sudo apt-get -y install python-pip libevent-dev python-all-dev ');
+	exec('sudo apt-get -y install libcec-dev');
     exec('sudo pip install greenlet');
     exec('sudo pip install gevent');
     exec('sudo pip install gevent-socketio');
@@ -51,5 +52,4 @@ function hdmiCec_remove() {
     exec('sudo apt-get remove python-pip');
 	exec('sudo apt-get remove libcec-dev');
 }
-
 ?>
