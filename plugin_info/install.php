@@ -19,6 +19,7 @@
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
 function hdmiCec_install() {
+    exit;
     exec('sudo apt-get -y install cmake libudev-dev libxrandr-dev python3-dev swig');
     exec('sudo apt-get -y install python-pip libevent-dev python-all-dev ');
 	exec('sudo apt-get -y install libcec-dev');
@@ -31,6 +32,7 @@ function hdmiCec_install() {
 }
 
 function hdmiCec_update() {
+    exit;
     exec('sudo apt-get -y install python-pip libevent-dev python-all-dev ');
 	exec('sudo apt-get -y install libcec-dev');
     exec('sudo pip install greenlet');
@@ -42,6 +44,7 @@ function hdmiCec_update() {
 }
 
 function hdmiCec_remove() {
+    exit;
     // test if these modules were installed before
     exec('sudo apt-get install python-pip');
     exec('sudo pip remove greenlet');

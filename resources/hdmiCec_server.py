@@ -140,6 +140,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
     def sendCommand(self, dest, cmd, data):
         global eqInfo, cecList
         print("Debug sendCommand start")
+        self.logger.debug('notify jeedom with command %s dest %s data %s', cmd, dest, data)
         if self.pyCecClient.ProcessCommandTx(data):
             print("Debug sendCommand Ok")
             self.start_response('200 OK', "text/html", '<h1>'+cmd+' command done.</h1>' )
@@ -152,7 +153,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             indice=cecList[dest]
             eqInfo[indice]["logicalAddress"]=indice
             eqInfo[indice]["power"]="Off"    
-            self.start_response('200 OK', "text/html", '<h1>device off command '+cmd+' failed.</h1>')
+            self.start_response('200 OK', "text/html", '<h1>Device off command '+cmd+' failed.</h1>')
         return
 
     def handle(self):
@@ -251,6 +252,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
         
         #message ID : 72 - Turns the System Audio Mode On or Off (Directly addressed or Broadcast)
         if cmd == 'on':
+            self.logger.debug('Debug Command on : start')
             print("Debug Command on : start")
             #trouver le numéro de l'équipement entre 0 et 15
             dest = cecList.index(value)
@@ -258,7 +260,8 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             #    data = "10:04"
             prefix = self.pyCecClient.GetLogicalAddressAdapter()+hex(dest)[2:]
             
-            print("Debug Command on : prefix=", prefix)
+            self.logger.debug('Debug Command on : prefix =%s', prefix)
+            #print("Debug Command on : prefix=", prefix)
             #initialize default value ! 
             data = prefix+":00"
             
@@ -282,6 +285,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             if (dest in [cecList.index('Recorder 1'),cecList.index('Recorder 2'),cecList.index('Recorder 3')]):
                 data=prefix+":72:01"    
             self.sendCommand(dest,cmd,data)
+            self.logger.debug('Debug Command on : end, passe t on par ici ?')
             return
             
         if cmd == 'off':

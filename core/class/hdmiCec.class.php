@@ -1097,8 +1097,13 @@ class hdmiCecCmd extends cmd
      */
     public function execute($_options = array())
     {
-        // $b=print_r($_options,true);
-        log::add ('hdmiCec','debug','Commande reçue à exécuter : '.$this->getConfiguration('request').' de type '.$this->type.' paramètres ='.$b);
+        if (empty($_options)){
+            $param = "none";
+        } else {
+            $param = print_r($_options,true);
+        }
+        
+        log::add ('hdmiCec','debug','Commande reçue à exécuter : '.$this->getConfiguration('request').' de type '.$this->type.' paramètres ='.$param);
         if (empty($this->getConfiguration('request'))) {
             log::add('hdmiCec', 'warning', 'Echec exécution d\'une commande vide');
             return;
@@ -1158,8 +1163,10 @@ class hdmiCecCmd extends cmd
                 $_options['message'] = 'HDMI1';
                 break;
         }
-        $b = print_r($_options, true);
-        log::add('hdmiCec', 'debug', 'Commande reçue à exécuter : ' . $this->getConfiguration('request') . ' de type ' . $this->type . ' paramètres =' . $b);
+        if (! empty($_options)) {
+            $param = print_r($_options, true);
+            log::add('hdmiCec', 'debug', '-> Enrichissement dynamique des paramètres : ' . $this->getConfiguration('request') . ' de type ' . $this->type . ' paramètres =' . $param);
+        }
         // $cmd = '/usr/bin/python ' .dirname(__FILE__) . '/../../3rdparty/executer_action.py '. $ip .' '. $port . ' '.$user.' '.$pass.' '.$device.' '.$action;
         // log::add('hdmiCec','debug','Commande reçue : ' . $action);
         $opts = array(
