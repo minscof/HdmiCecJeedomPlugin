@@ -582,7 +582,7 @@ class pyCecClient:
 
   # scan the bus and display devices that were found
   def ProcessCommandScan(self):
-    print("Rrequesting CEC bus information ...")
+    print("Requesting CEC bus information ...")
     strLog = "CEC bus information\n===================\n"
     addresses = self.lib.GetActiveDevices()
     activeSource = self.lib.GetActiveSource()
@@ -1094,8 +1094,7 @@ class hdmiCecServer(socketserver.TCPServer):
         return socketserver.TCPServer.handle_request(self)
 
     def verify_request(self, request, client_address):
-        #self.logger.debug('verify_request(%s, %s)',
-                          request, client_address)
+        #self.logger.debug('verify_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.verify_request(
             self, request, client_address,
         )
