@@ -1100,8 +1100,7 @@ class hdmiCecServer(socketserver.TCPServer):
         )
 
     def process_request(self, request, client_address):
-        self.logger.debug('process_request(%s, %s)',
-                          request, client_address)
+        self.logger.debug('process_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.process_request(
             self, request, client_address,
         )
@@ -1111,8 +1110,7 @@ class hdmiCecServer(socketserver.TCPServer):
         return socketserver.TCPServer.server_close(self)
 
     def finish_request(self, request, client_address):
-        #self.logger.debug('finish_request(%s, %s)',
-                          request, client_address)
+        #self.logger.debug('finish_request(%s, %s)', request, client_address)
         return socketserver.TCPServer.finish_request(
             self, request, client_address,
         )
@@ -1141,4 +1139,4 @@ if __name__ == '__main__':
     lib.SetSourceActivatedCallback(source_activated_callback)
     # initialise libCEC and enter the main loop
     lib.InitLibCec()
-    logger.info('end.')
+    logger.info('main hdmiCec_server end.')
