@@ -5,7 +5,7 @@
 	"icon":"icon animal-sheep1",
 	"licence":"AGPL",
 	"author":"Minscof",
-	"installation":"L'installation ajoute les librairies libCEC et regex. Il faut que le système dispose de python en version 3.4 avec le module gevent, gevent-socketio, cec, regex. Un serveur est utilisé pour écouter et transmettre les ordres via le canal HDMI-CEC. Le port 6000 est recommandé. L adresse logique CEC Recording Device est recommandée  elle indique comment jeedom se présente sur le réseau CEC HDMI. L'inclusion automatique permet d'ajouter de nouveaux équipements implicitement. Le fonctionnement standard est de demander une détection alors que tous les équipements sont sous tension. La synchronisation permet de forcer une mise à jour des équipements déjà connus et uniquement eux.",
+	"installation":"L'installation ajoute la librairie libCEC. Il faut que le système dispose de python en version 3.4. Les modules utilisés sont gevent, gevent-socketio, cec, regex. Un serveur est utilisé pour écouter et transmettre les ordres via le canal HDMI-CEC. Le port 6000 est recommandé. L'adresse logique CEC Recording Device est recommandée. Elle indique comment jeedom se présente sur le réseau CEC HDMI. L'inclusion automatique permet d'ajouter de nouveaux équipements implicitement. Le fonctionnement standard est de demander une détection alors que tous les équipements sont sous tension. La synchronisation permet de forcer une mise à jour des équipements déjà connus et uniquement eux.",
 	"require":"4.0.0",
 	"category":"multimedia",
 	"hasDependency":true,

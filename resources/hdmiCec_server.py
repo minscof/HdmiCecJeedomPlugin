@@ -93,6 +93,11 @@ print('Server started at ', strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(ti
 def polling(self, unstr):
     global cecList 
     print(unstr, time())
+    polling.counter += 1
+    polling.counter %=10
+    if polling.counter == 0:
+        self.logger.debug('polling still on')
+
         
     for equipment in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e']:
         if self.pyCecClient.GetLogicalAddressAdapter() == equipment:
@@ -107,7 +112,7 @@ def polling(self, unstr):
             #print "Debug sendCommand NOk"
             value = '{"logicalAddress":"' + cecList[int(equipment,16)] + '","status":"Off"}'
             #print("EVENT to notify send command", jeedomCmd + value)
-            self.logger.debug('notify jeedom with command %s', jeedomCmd + value)
+            self.logger.debug('polling no answser notify jeedom with command %s', jeedomCmd + value)
             urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
 
 
@@ -116,10 +121,9 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
         # initialization.
         self.logger = logging.getLogger('jeedomRequestHandler')
         self.pyCecClient = lib
+        self.polling.counter = 0
         self.polling = MyTimer(5.0, polling, [self,"polling Cec"])
-        socketserver.BaseRequestHandler.__init__(self, request,
-                                                 client_address,
-                                                 server)
+        socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def start_response(self, code, contentType, data):
         log = logging.getLogger('start_reponse')
@@ -140,7 +144,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
     def sendCommand(self, dest, cmd, data):
         global eqInfo, cecList
         print("Debug sendCommand start")
-        self.logger.debug('notify jeedom with command %s dest %s data %s', cmd, dest, data)
+        self.logger.debug('sendCommand : command %s dest %s data %s', cmd, dest, data)
         if self.pyCecClient.ProcessCommandTx(data):
             print("Debug sendCommand Ok")
             self.start_response('200 OK', "text/html", '<h1>'+cmd+' command done.</h1>' )
@@ -148,7 +152,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             print("Debug sendCommand NOk")
             value = '{"logicalAddress":"' + self.pyCecClient.lib.LogicalAddressToString(dest) + '","status":"Off"}'
             #print("EVENT to notify send command", jeedomCmd + value)
-            self.logger.debug('notify jeedom with command %s', jeedomCmd + value)
+            self.logger.debug('sendCommand : no answer on to off : notify jeedom with command %s', jeedomCmd + value)
             urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
             indice=cecList[dest]
             eqInfo[indice]["logicalAddress"]=indice
@@ -158,7 +162,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         global eqScanned, eqInfo, server
-        #self.logger.debug('start handle')
+        self.logger.debug('start handle()')
 
         data = str(self.request.recv(1024), "utf-8").split('\n')[0]
         
@@ -327,7 +331,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             #TODO send feedback to update TV status
             value = '{"logicalAddress":"' + self.pyCecClient.lib.LogicalAddressToString(0) + '","input":"'+value2+'"}'
             #print("EVENT to notify send command", jeedomCmd + value)
-            self.logger.debug('notify jeedom with command %s', jeedomCmd + value)
+            self.logger.debug('setInput : after sendCommand notify jeedom with command %s', jeedomCmd + value)
             urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
             return
            
@@ -365,7 +369,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
             value = self.pyCecClient.AnalyzeCommand(value)
             if value:
                 #print("EVENT to notify send command", jeedomCmd + value)
-                self.logger.debug('notify jeedom with command %s', jeedomCmd + value) 
+                self.logger.debug('test send test, notify jeedom with command %s', jeedomCmd + value) 
                 a = urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
                 self.start_response('200 OK', 'text/html', '<h1>Test command done.</h1>')
                 return
@@ -634,11 +638,11 @@ class pyCecClient:
             self.SetAddressAdapter(cecList.index(equipment[2]),equipment[1])
             print('logicalAddress of adapter:', self.GetLogicalAddressAdapter())
     
-    #send commande to signal this device is on before entering the main loop
+    #send command to signal this device is on before entering the main loop
     value = self.AnalyzeCommand("<< "+self.GetLogicalAddressAdapter()+"f:84:"+self.GetPhysicalAddressAdapter('xx:xx')+":01")
     #value = '{"logicalAddress":"Tuner1","status":"On"}'
     #print("EVENT to notify send command", jeedomCmd + value)
-    self.logger.debug('notify jeedom with command %s', jeedomCmd + value)
+    self.logger.debug('mainloop, notify jeedom with command %s', jeedomCmd + value)
     urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
     indice=cecList[int(self.GetLogicalAddressAdapter(),16)]
     eqInfo[indice]["logicalAddress"]=indice
@@ -1026,7 +1030,7 @@ class pyCecClient:
     value = self.AnalyzeCommand(command)
     if value:
       #print("EVENT to notify send command", jeedomCmd + value)
-      self.logger.debug('notify jeedom with command %s', jeedomCmd + value) 
+      self.logger.debug('CommandCallback, notify jeedom with command %s', jeedomCmd + value) 
       urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
     return 0
 
