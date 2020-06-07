@@ -19,11 +19,11 @@ import regex
 #import exceptions
 import threading
 
+__version__='0.97'
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)-15s - %(name)s: %(message)s')
-logger = logging.getLogger('toto')
-logger.info('Début du programme')
+logger = logging.getLogger('hdmiCec_server')
+logger.info('Program starting version %s',__version__)
 
-__version__='0.96'
 #print(cec)
 
 cecList = ["TV","Recorder 1","Recorder 2","Tuner 1","Playback 1","Audio","Tuner 2","Tuner 3","Playback 2","Recorder 3","Tuner 4","Playback 3","Reserved 1","Reserved 2","Free use","Broadcast"]
@@ -99,7 +99,7 @@ def polling(self, unstr):
     polling.counter += 1
     polling.counter %=10
     if polling.counter == 0:
-        logger.debug('polling still on')
+        logger.debug('&&&&&&&&&&&&&&&              polling still on %s',time())
         value = '{"polling":"on"}'
         urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
 
@@ -119,6 +119,7 @@ def polling(self, unstr):
             #print("EVENT to notify send command", jeedomCmd + value)
             logger.debug('polling no answser notify jeedom with command %s', jeedomCmd + value)
             urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
+
 polling.counter = 0
 
 class jeedomRequestHandler(socketserver.BaseRequestHandler):
@@ -131,8 +132,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def start_response(self, code, contentType, data):
-        #log = logging.getLogger('start_reponse')
-        self.log.debug('start_response() code = %s data = %s', code, data)
+        self.logger.debug('start_response() code = %s data = %s', code, data)
         code = "HTTP/1.1 " + code + '\r\n'
         self.request.send(code.encode())
         response_headers = {
@@ -1086,8 +1086,9 @@ class MyTimer:
         self._timer = threading.Timer(self._tempo, self._run) 
         self._timer.start() 
   
-    def stop(self): 
-        self._timer.cancel() 
+    def stop(self):
+        if self._timer: 
+            self._timer.cancel() 
   
 class hdmiCecServer(socketserver.TCPServer):
     def __init__(self, server_address, handler_class=jeedomRequestHandler):
@@ -1104,9 +1105,7 @@ class hdmiCecServer(socketserver.TCPServer):
 
     def serve_forever(self, poll_interval=0.5):
         self.logger.debug('waiting for request from jeedom')
-        self.logger.info(
-            'Handling jeedom requests, press <Ctrl-C> to quit'
-        )
+        self.logger.info('Handling jeedom requests, press <Ctrl-C> to quit')
         socketserver.TCPServer.serve_forever(self, poll_interval)
         return
 
@@ -1151,7 +1150,7 @@ if __name__ == '__main__':
     logger = logging.getLogger('hdmiCec_server')
     logger.debug('________')
     logger.info('starting...')
-    logger.debug('--------')
+    logger.debug('-----------')
     
     # initialise libCEC
     lib = pyCecClient()
