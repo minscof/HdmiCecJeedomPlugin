@@ -285,9 +285,9 @@ class hdmiCec extends eqLogic
                         $power = $value;
                 }
             }
-            log::add('hdmiCec', 'debug', '________________________________');
+            log::add('hdmiCec', 'debug', '___________________________');
             log::add('hdmiCec', 'debug', '|Equipement trouvé : ' . $a);
-            log::add('hdmiCec', 'debug', '|_______________________________');
+            log::add('hdmiCec', 'debug', '|__________________________');
             self::saveEquipment($vendor, $logicalAddress, $physicalAddress, $osdName, $cecVersion, $power);
         }
         log::add('hdmiCec', 'info', '******** Fin du scan de la connexion hdmi - nombre d\'équipements trouvés = ' . $count . ' ********');

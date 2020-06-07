@@ -20,6 +20,8 @@ import regex
 import threading
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)-15s - %(name)s: %(message)s')
+logger = logging.getLogger('toto')
+logger.info('Début du programme')
 
 __version__='0.96'
 #print(cec)
@@ -88,15 +90,18 @@ jeedomCmd = "http://" + jeedomIP + "/core/api/jeeApi.php?apikey=" + jeedomApiKey
 
 time_start = time()
 print('Server started at ', strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time_start)), 'listening on port ', PORT)  
+logger.info('Server started at %s listening on port %s',strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time_start)), PORT)
 
 
 def polling(self, unstr):
-    global cecList 
+    global cecList, logger 
     print(unstr, time())
     polling.counter += 1
     polling.counter %=10
     if polling.counter == 0:
-        self.logger.debug('polling still on')
+        logger.debug('polling still on')
+        value = '{"polling":"on"}'
+        urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
 
         
     for equipment in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e']:
@@ -112,22 +117,22 @@ def polling(self, unstr):
             #print "Debug sendCommand NOk"
             value = '{"logicalAddress":"' + cecList[int(equipment,16)] + '","status":"Off"}'
             #print("EVENT to notify send command", jeedomCmd + value)
-            self.logger.debug('polling no answser notify jeedom with command %s', jeedomCmd + value)
+            logger.debug('polling no answser notify jeedom with command %s', jeedomCmd + value)
             urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
-
+polling.counter = 0
 
 class jeedomRequestHandler(socketserver.BaseRequestHandler):
     def __init__(self, request, client_address, server):
         # initialization.
         self.logger = logging.getLogger('jeedomRequestHandler')
+        self.logger.debug('__init__')
         self.pyCecClient = lib
-        self.polling.counter = 0
         self.polling = MyTimer(5.0, polling, [self,"polling Cec"])
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def start_response(self, code, contentType, data):
-        log = logging.getLogger('start_reponse')
-        log.debug('reponse code = %s data = %s', code, data)
+        #log = logging.getLogger('start_reponse')
+        self.log.debug('start_response() code = %s data = %s', code, data)
         code = "HTTP/1.1 " + code + '\r\n'
         self.request.send(code.encode())
         response_headers = {
@@ -144,7 +149,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
     def sendCommand(self, dest, cmd, data):
         global eqInfo, cecList
         print("Debug sendCommand start")
-        self.logger.debug('sendCommand : command %s dest %s data %s', cmd, dest, data)
+        self.logger.debug('sendCommand() : command %s dest %s data %s', cmd, dest, data)
         if self.pyCecClient.ProcessCommandTx(data):
             print("Debug sendCommand Ok")
             self.start_response('200 OK', "text/html", '<h1>'+cmd+' command done.</h1>' )
@@ -1098,9 +1103,9 @@ class hdmiCecServer(socketserver.TCPServer):
         return
 
     def serve_forever(self, poll_interval=0.5):
-        self.logger.debug('waiting for request')
+        self.logger.debug('waiting for request from jeedom')
         self.logger.info(
-            'Handling requests, press <Ctrl-C> to quit'
+            'Handling jeedom requests, press <Ctrl-C> to quit'
         )
         socketserver.TCPServer.serve_forever(self, poll_interval)
         return
@@ -1144,7 +1149,9 @@ class hdmiCecServer(socketserver.TCPServer):
 
 if __name__ == '__main__':
     logger = logging.getLogger('hdmiCec_server')
+    logger.debug('________')
     logger.info('starting...')
+    logger.debug('--------')
     
     # initialise libCEC
     lib = pyCecClient()
