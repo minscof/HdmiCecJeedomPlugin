@@ -133,6 +133,7 @@ $eqLogics = eqLogic::byType('hdmiCec');
 									<option value="DVD">{{Lecteur DVD}}</option>
 									<option value="RPI" selected>{{Raspberry Pi}}</option>
 									<option value="JEEDOM">{{Jeedom Box}}</option>
+									<option value="CHROMECAST">{{Chromecast}}</option>
 									<option value="AUTRE">{{Autre}}</option>
 								</select>
 							</div>
