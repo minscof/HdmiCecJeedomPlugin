@@ -1,2 +1,3 @@
 sonyKDL-EX500;Sony KDL EX500
 samsungTV;Samsung TV
+télé;Téléviseur

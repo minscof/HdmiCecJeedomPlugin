@@ -1,4 +1,2 @@
 sonySTR-DN840;Sony STR DN840
-chromecastv1;Chromecast V1
-chromecastv2;Chromecast V2
-chromecastv3;Chromecast V3
+tuner;Tuner

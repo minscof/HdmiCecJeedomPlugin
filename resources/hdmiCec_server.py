@@ -94,17 +94,38 @@ logger.info('Server started at %s listening on port %s',strftime("%a, %d %b %Y %
 
 
 def polling(self, unstr):
-    global cecList, logger 
+    global cecList, logger, eqScanned, eqInfo 
     print(unstr, time())
     polling.counter += 1
-    polling.counter %=10
-    if polling.counter == 0:
-        logger.debug('&&&&&&&&&&&&&&&              polling still on %s',time())
+    toto = polling.counter % 2
+    if toto == 0:
+        logger.debug('-*-*-*-*-*-*-*            polling still on %s counter %s ',time(), polling.counter)
         value = '{"polling":"on"}'
         urllib.request.urlopen(jeedomCmd + urllib.parse.quote(value)).read()
+        logger.debug('polling scan starts...')    
+        eqScanned = self.pyCecClient.ProcessCommandScan()
+        logger.debug('polling scan finished')
+        data = '{"scan":{'
+        count = 1
+        virgule = ''
+        for key, equipment in list(eqInfo.items()):
+                eqInfo[key] = {'vendor':'unscanned','physicalAddress':'unscanned','logicalAddress':'unscanned','active':'unscanned','cecVersion':'unscanned','power':'unscanned','osdName':'unscanned'}
+        for equipment in eqScanned:
+            eqInfo[str(equipment[2])] = {'vendor':str(equipment[0]),'physicalAddress':str(equipment[1]),'logicalAddress':str(equipment[2]),'active':str(equipment[3]),'cecVersion':str(equipment[4]),'power':str(equipment[5]),'osdName':str(equipment[6])}
+            data += virgule
+            data += '"' + str(count) + '":{"vendor":"' + str(equipment[0]) + '","physicalAddress":"' + str(equipment[1]) + '","logicalAddress":"' + str(equipment[2]) + '","active":"' + str(equipment[3]) + '","cecVersion":"' + str(equipment[4]) + '","power":"' + str(equipment[5]) + '","osdName":"' + str(equipment[6]) + '"}'
+            virgule = ','
+            count += 1
+        data += '}}'
+        # data = '{"1":{"vendor":'+str(equipments[0][0])+'},"2":{"vendor":'+str(equipments[1][0])+'}}'
+        #print("DEBUG = data =", data)
+        self.logger.debug('result scan data ->%s', data)
+        logger.debug('polling notify jeedom with result san %s', jeedomCmd + data)
+        urllib.request.urlopen(jeedomCmd + urllib.parse.quote(data)).read()
 
-        
-    for equipment in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e']:
+    
+    #for equipment in ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e']:
+    for equipment in []:
         if self.pyCecClient.GetLogicalAddressAdapter() == equipment:
             continue
         #envoi de la commande 8f : give device power status
@@ -128,7 +149,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
         self.logger = logging.getLogger('jeedomRequestHandler')
         self.logger.debug('__init__')
         self.pyCecClient = lib
-        self.polling = MyTimer(5.0, polling, [self,"polling Cec"])
+        self.polling = MyTimer(150.0, polling, [self,"polling Cec"])
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def start_response(self, code, contentType, data):
@@ -143,8 +164,7 @@ class jeedomRequestHandler(socketserver.BaseRequestHandler):
         response_headers_raw = ''.join('%s: %s\n' % (k, v) for k, v in response_headers.items())
         self.request.send(response_headers_raw.encode())
         self.request.send(b'\n')
-        self.request.send(data.encode())
-        return
+        return self.request.send(data.encode())
         
     def sendCommand(self, dest, cmd, data):
         global eqInfo, cecList
@@ -594,11 +614,11 @@ class pyCecClient:
     cmd = self.lib.CommandFromString(data)
     print(("transmit " + data))
     if self.lib.Transmit(cmd):
-      print("command sent")
-      return 1
+      print("command sent %s",data)
+      return True
     else:
-      print("failed to send command")
-      return 0
+      print("failed to send command %s",data)
+      return False
 
   # scan the bus and display devices that were found
   def ProcessCommandScan(self):
@@ -708,6 +728,7 @@ class pyCecClient:
     # 01:00:47:01 : message ID : 00 - Used as a response to indicate that the device does not support the requested message type, or that it cannot execute it at the present time (Directly addressed) parameters
     if command in [">> 63:9e:05"]:
         return value
+
     #print "2"
     # command 90
     # 0f:80:40:00:30:00
@@ -743,6 +764,7 @@ class pyCecClient:
         #print 'after', eqInfo[cecList[int(matchObj.group(1),16)]]['power']
         #print 'eqInfo=', eqInfo
         return value
+
     #print "3"
     # command 36
     matchObj = regex.match('^>> ([0-9a-f])f:36', command)
@@ -752,12 +774,14 @@ class pyCecClient:
         eqInfo[indice]["logicalAddress"]=indice
         eqInfo[indice]["power"]="Standby"
         return value
+
     #print "4"
     # command 83
     matchObj = regex.match('^>> ([0-9a-f])f:83', command)
     if matchObj:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Request phys address"}'
         return value
+
     #print "5"
     # command 84 :message ID : 84 - Used to inform all other devices of the mapping
     # between physical and logical address of the initiator (Broadcast)
@@ -780,6 +804,7 @@ class pyCecClient:
         #value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Alive"}'
         return value
     
+    #print "6"
     matchObj = regex.match('^>> ([0-9a-f])f:84:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f][.]*', command)
     if matchObj:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","status":"On"}'
@@ -787,7 +812,8 @@ class pyCecClient:
         eqInfo[indice]["logicalAddress"]=indice
         eqInfo[indice]["power"]="On"
         return value
-    
+
+    #print "7"
     matchObj = regex.match('^<< ([0-9a-f])f:84:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f][.]*', command)
     if matchObj:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","status":"On"}'
@@ -795,7 +821,8 @@ class pyCecClient:
         eqInfo[indice]["logicalAddress"]=indice
         eqInfo[indice]["power"]="On"
         return value
-    #print "6"
+
+    #print "8"
     # command 85 : message ID : 85 - Used by a new device to discover the status of the system (Broadcast)
     # 5f:85      
     matchObj = regex.match('^>> ([0-9a-f])f:85', command)
@@ -804,7 +831,8 @@ class pyCecClient:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Alive"}'
         print("value", value)
         return value
-    #print "7"
+
+    #print "9"
     # command 80 : 
     # *0f:80:00:00:10:00*|*0f:80:20:00:10:00*|*0f:80:30:00:10:00*|*0f:80:40:00:10:00*)
     #5f:80:16:00:14:00 ampli sur BD
@@ -812,7 +840,6 @@ class pyCecClient:
     matchObj = regex.match('^>> ([0-9a-f])f:80:[0-9a-f][0-9a-f]:00:([0-9a-f][0-9a-f]):00', command)
     if matchObj:
         input = matchObj.group(2)
-        
         inputInt = int(matchObj.group(2))
         if  inputInt == 10:
             input = "HDMI1"
@@ -836,7 +863,8 @@ class pyCecClient:
             input = "SA CD/CD"
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","input":"' + input + '"}'
         return value
-    #print "8"
+
+    #print "10"
     # command 82 :message ID : 82 - Used by a new source to indicate that it has started to transmit a stream OR used in response to a "Request Active Source" (Brodcast). This message is used in several features : One Touch Play,Routing Control
     # 1f:82:11:00
     # 0f:82:00:00
@@ -844,7 +872,8 @@ class pyCecClient:
     if matchObj:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"started to transmit"}'
         return value
-    #print "9"
+
+    #print "11"
     # command 72 :message ID : 72 - Turns the System Audio Mode On or Off (Directly addressed or Broadcast)
     # *5f:72:00
     # attention 5f:72:00 peut aussi signifier mute pour un ampli
@@ -859,14 +888,14 @@ class pyCecClient:
         eqInfo[indice]["logicalAddress"]=indice
         eqInfo[indice]["power"]=status
         return value
-    #print "10"    
+
+    #print "12"    
     #à vérifier : reçu après avoir demandé l'arrêt : pas eu d'autre message - +1 confirmé
     #hypothèse : arrêt du téléviseur
     #if command in ['>> 0f:a0:08:00:46:00:09:00:01'] :
     #    value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(0) + '","status":"Standby"}'
     #    return value
-    #0f:a0:08:00:46:00:09:00:01
-    
+    #0f:a0:08:00:46:00:09:00:01    
     matchObj = regex.match('^>> ([0-9a-f]{2}):a0:(([0-9a-f]{2}:){3})(.*)', command)
     if matchObj:
         vendor=self.lib.VendorIdToString(int(matchObj.group(2).replace(":", ""),16))
@@ -895,19 +924,21 @@ class pyCecClient:
             value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(0) + '","info":"unrecognized command :'+matchObj.group(4)+' from vendor:'+vendor+'"}'
             return value
         
-    #print "11"
+    #print "13"
     matchObj = regex.match('^>> 0([0-9a-f]):8b:([0-9a-f][0-9a-f])', command)
     if matchObj:
         key = matchObj.group(2)
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","keyReleased":"'+cecKey[key]+ '"}'
         return value
-    #print "12"
+
+    #print "14"
     matchObj = regex.match('^>> 0([0-9a-f]):44:([0-9a-f][0-9a-f])', command)
     if matchObj:
         key = matchObj.group(2)
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","keyPressed":"'+cecKey[key]+ '"}'
         return value
-    #print "13"
+
+    #print "15"
     #command 87 message ID : 87 - Reports the Vendor ID of this device (Broadcast)
     #0f:87:08:00:46
     matchObj = regex.match('^>> ([0-9a-f])f:87:([0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2})', command)
@@ -917,8 +948,7 @@ class pyCecClient:
         value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"vendor='+vendor+ '"}'
         return value
     
-    
-    #print "14"
+    #print "16"
     #message direct entre équipement
     #message ID : 00 - Used as a response to indicate that the device does not support the requested message type, or that it cannot execute it at the present time (Directly addressed)
     #47 = Set OSD name
@@ -932,12 +962,12 @@ class pyCecClient:
         return value
          
     
-    #print "14"
+    #print "17"
     #message direct entre équipement
     matchObj = regex.match('^>> ([0-9a-e])([0-9a-e]):([0-9a-f]{2}):([0-9a-f]{2})(.*)', command)
     if matchObj:
         msgID =  matchObj.group(3)
-        print("direct message between equipement", msgID)
+        print("1 direct message between equipement", msgID)
         if msgID == "00":
             #command 00message ID : 00 - Used as a response to indicate that the device does not support the requested message type, or that it cannot execute it at the present time (Directly addressed)
             #notify dest who can t execute the cmd to signal that dest is at least standby
@@ -965,12 +995,12 @@ class pyCecClient:
             eqInfo[indice]["power"]=status
             return value
         
-    #print "15"
+    #print "18"
     #message direct entre équipement
     matchObj = regex.match('^>> ([0-9a-e])([0-9a-e]):([0-9a-f]{2})', command)
     if matchObj:
         msgID =  matchObj.group(3)
-        print("direct message between equipement", msgID)
+        print("2 direct message between equipement", msgID)
         if msgID == "46":
             #message ID : 46 - Used to request the preferred OSD name of a device for use in menus associated with that device (Directly addressed)
             value = '{"logicalAddress":"' + self.lib.LogicalAddressToString(int(matchObj.group(1),16)) + '","info":"Request osdName to '+self.lib.LogicalAddressToString(int(matchObj.group(2),16))+'"}'
@@ -988,7 +1018,7 @@ class pyCecClient:
             return value
         
     
-    #print "16"
+    #print "19"
     #message ID : 32 - Used by a TV or another device to indicate the menu language (Broadcast)
     matchObj = regex.match('^>> ([0-9a-e])f:32:(.*)', command)
     if matchObj:
@@ -1055,6 +1085,7 @@ def log_callback(level, time, message):
 
 # key press callback
 def key_press_callback(key, duration):
+  print('key_press_callback')
   return lib.KeyPressCallback(key, duration)
 
 # command callback
@@ -1076,6 +1107,7 @@ class MyTimer:
         self._args = args 
         self._kwargs = kwargs 
         self._tempo = tempo 
+        self._timer = None
   
     def _run(self): 
         self._timer = threading.Timer(self._tempo, self._run) 
@@ -1087,7 +1119,11 @@ class MyTimer:
         self._timer.start() 
   
     def stop(self):
-        if self._timer: 
+        try:
+            self._timer
+        except NameError:
+            self._timer = None
+        if self._timer is not None: 
             self._timer.cancel() 
   
 class hdmiCecServer(socketserver.TCPServer):
@@ -1096,18 +1132,15 @@ class hdmiCecServer(socketserver.TCPServer):
         self.logger.debug('__init__')
         socketserver.TCPServer.allow_reuse_address = True
         socketserver.TCPServer.__init__(self, server_address, handler_class)
-        return
 
     def server_activate(self):
         self.logger.debug('server_activate')
-        socketserver.TCPServer.server_activate(self)
-        return
+        return socketserver.TCPServer.server_activate(self)
 
     def serve_forever(self, poll_interval=0.5):
         self.logger.debug('waiting for request from jeedom')
         self.logger.info('Handling jeedom requests, press <Ctrl-C> to quit')
-        socketserver.TCPServer.serve_forever(self, poll_interval)
-        return
+        return socketserver.TCPServer.serve_forever(self, poll_interval)
 
     def handle_request(self):
         #self.logger.debug('handle_request')

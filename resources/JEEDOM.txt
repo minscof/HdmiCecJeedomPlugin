@@ -1,2 +1,4 @@
 jeedomCenter;Jeedom Center
 jeedomMiniPlus;Jeedom Mini+
+jeedomSmart;Jeedom Smart
+jeedomPro;Jeedom jeedomPro
